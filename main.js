@@ -59,6 +59,9 @@ client.on('messageCreate', (message) => {
         case 'profile': client.commands.get('profile').execute(message, args, Discord);
         break;
 
+        case 'links': client.commands.get('links').execute(message, args, Discord);
+        break;
+
         default: message.channel.send("'" + message.content + "' is not a command!");
     }
 })
