@@ -47,8 +47,7 @@ client.on('messageCreate', (message) => {
     
     const args = message.content.slice(prefix.length).split(' ');
     const command = args.shift().toLowerCase();
-
-    //test message (can also use message.channel.send('thing') instead of message.reply('thing))
+    
 
     //Check if the user has sufficient permission
     //Performes the command
@@ -60,6 +59,9 @@ client.on('messageCreate', (message) => {
         break;
 
         case 'links': client.commands.get('links').execute(message, args, Discord);
+        break;
+
+        case 'arrow': client.commands.get('arrow').execute(message, args, Discord);
         break;
 
         default: message.channel.send("'" + message.content + "' is not a command!");
