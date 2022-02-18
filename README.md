@@ -1,5 +1,5 @@
 # selmerBot
-Negative Money!!!!!
+
 Authors: ION606, MajorDrools
 
 Description:
