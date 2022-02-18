@@ -1,0 +1,22 @@
+{
+  "name": "selmerbot",
+  "version": "1.0.0",
+  "description": "THEEEEEE SEEELMEEEERRR BOOOOOOOOTTTTTT",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ION606/selmerBot.git"
+  },
+  "author": "ION606",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ION606/selmerBot/issues"
+  },
+  "homepage": "https://github.com/ION606/selmerBot#readme",
+  "dependencies": {
+    "discord.js": "^13.6.0"
+  }
+}
