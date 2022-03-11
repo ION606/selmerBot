@@ -40,6 +40,17 @@ client.on('ready', () => {
 
 
 client.on('messageCreate', (message) => {
+
+    /*//PREVIEW COMMANDS START
+    const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
+
+    lib.discord.commands['@0.0.0'].create({
+    "name": "test",
+    "description": "it's a test command!",
+    "options": []
+    });
+
+    //PREVIEW COMMANDS END*/
     
     //COMMAND AREA
     //Check if the prefix exists
@@ -66,10 +77,17 @@ client.on('messageCreate', (message) => {
 
         //case 'playaudio': client.commands.get('playaudio').execute(message, args, client, Discord);
         //break;
+        
         case 'quotes': client.commands.get('quotes').execute(message, args, Discord, Client);
         break;
 
         case 'extracredit': client.commands.get('EC').execute(message);
+        break;
+
+        case 'scrape': client.commands.get('scraper').execute(message, args);
+        break;
+
+        case 'kareoke': client.commands.get('kareoke').execute(message, args);
         break;
 
         default: message.channel.send("'" + message.content + "' is not a command!");

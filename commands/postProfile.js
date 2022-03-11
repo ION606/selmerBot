@@ -11,7 +11,7 @@ module.exports = {
         .addFields(
             {name: 'My Epithets:', value: "Pearls of Wisdom"},
             {name: '\t1. ', value: "Negative money is the best money"},
-            {name: '\t2. ', value: "Ukrane"}
+            {name: '\t2. ', value: "There is no god, only logic"}
         );
         
         message.channel.send({ embeds: [newEmbed] });

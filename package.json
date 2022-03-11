@@ -18,8 +18,12 @@
   "homepage": "https://github.com/ION606/selmerBot#readme",
   "dependencies": {
     "@discordjs/voice": "^0.8.0",
+    "axios": "^0.26.1",
+    "cheerio": "^1.0.0-rc.10",
     "discord.js": "^13.6.0",
     "ffmpeg-static": "^4.4.1",
-    "libsodium-wrappers": "^0.7.9"
+    "libsodium-wrappers": "^0.7.9",
+    "node-fetch": "2.0",
+    "puppeteer": "^13.5.1"
   }
 }
