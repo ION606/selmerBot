@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "@discordjs/opus": "github:discordjs/opus",
+    "@discordjs/voice": "^0.8.0",
+    "apt": "^0.0.2",
+    "discord.js": "^13.6.0",
+    "ffmpeg": "^0.0.4",
+    "ffmpeg-static": "^5.0.0",
+    "node.js": "^0.0.1-security",
+    "sudo": "^1.0.3"
+  },
+  "name": "selmerbot",
+  "description": "Authors: ION606, MajorDrools",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ION606/selmerBot.git"
+  },
+  "author": "ION606",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ION606/selmerBot/issues"
+  },
+  "homepage": "https://github.com/ION606/selmerBot#readme"
+}
