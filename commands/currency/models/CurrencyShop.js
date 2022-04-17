@@ -8,6 +8,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
+		icon: {
+			type: DataTypes.STRING,
+			unique: true,
+		},
 	}, {
 		timestamps: false,
 	});

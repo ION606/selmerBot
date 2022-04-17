@@ -10,6 +10,8 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 	dialect: 'sqlite',
 	logging: false,
 	storage: 'database.sqlite',
+	idle: 200000,
+	aquire: 1000000,
 });
 
 const CurrencyShop = require('./models/CurrencyShop.js')(sequelize, Sequelize.DataTypes);
@@ -20,9 +22,9 @@ const force = process.argv.includes('--force') || process.argv.includes('-f');
 
 sequelize.sync({ force }).then(async () => {
 	const shop = [
-		CurrencyShop.upsert({ name: 'Tea', cost: 1 }),
-		CurrencyShop.upsert({ name: 'Coffee', cost: 2 }),
-		CurrencyShop.upsert({ name: 'Cake', cost: 5 }),
+		CurrencyShop.upsert({ name: 'Tea', cost: 1, icon: '🍵' }),
+		CurrencyShop.upsert({ name: 'Coffee', cost: 2, icon: '☕' }),
+		CurrencyShop.upsert({ name: 'Cake', cost: 5, icon: '🍰' }),
 	];
 
 	await Promise.all(shop);

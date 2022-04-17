@@ -1,6 +1,7 @@
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
+const { token } = require('./commands/currency/config.json');
+
 
 const client = new Client({ 
     intents: [
@@ -19,7 +20,11 @@ client.commands = new Discord.Collection();
 
 client.commNames = new Discord.Collection();
 
+client.econ = new Discord.Collection();
+
 const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
+
+const econFiles = fs.readdirSync('./commands/currency').filter(file => file.endsWith('.js'));;
 
 let i = 0;
 for (const file of commandFiles) {
@@ -30,28 +35,26 @@ for (const file of commandFiles) {
     i ++;
 }
 
+//ECON SECTION
+client.commands.set('ECON', require(`./commands/currency/app.js`));
+const currency = new Discord.Collection();
+const { Users } = require('./commands/currency/dbObjects.js');
+i++;
 
 client.commNames.set('length', i);
 
 
-client.on('ready', () => {
+client.on('ready', async () => {
+    // client.once('ready', async () => {
+        const storedBalances = await Users.findAll();
+        storedBalances.forEach(b => currency.set(b.user_id, b));
+
+        // console.log(`Logged in as ${client.user.tag}!`);
     console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
 });
 
 
 client.on('messageCreate', (message) => {
-
-    /*//PREVIEW COMMANDS START
-    const lib = require('lib')({token: process.env.STDLIB_SECRET_TOKEN});
-
-    lib.discord.commands['@0.0.0'].create({
-    "name": "test",
-    "description": "it's a test command!",
-    "options": []
-    });
-
-    //PREVIEW COMMANDS END*/
-    
     //COMMAND AREA
     //Check if the prefix exists
     if (!message.content.startsWith(prefix) || message.author.bot) return;
@@ -90,7 +93,7 @@ client.on('messageCreate', (message) => {
         case 'kareoke': client.commands.get('kareoke').execute(message, args);
         break;
 
-        default: message.channel.send("'" + message.content + "' is not a command!");
+        default: client.commands.get('ECON').execute(client, prefix, message, args, command, Users, currency);
     }
 })
 
