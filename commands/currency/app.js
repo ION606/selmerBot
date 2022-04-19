@@ -104,16 +104,9 @@ module.exports = {
                     }
                 }
             } else if (command === 'balance') {
-                //BROKEN PLEASE FIX!!!
                 const target = message.author;
-                let user = currency.get(target.id);
-                
-                //let user = await Users.findOne({ where: { user_id: message.author.id } });
-                if (!user) {
-                    const newUser = await Users.create({ user_id: user, balance: 0 });
-                    currency.set(target.id, newUser);
-                } else { console.log(user); }
-                return message.reply(`${target.tag} has \$${currency.getBalance(target)}`);
+                currency.add(target.id, 0); //Make sure there's something
+                return message.reply(`${target.tag} has \$${currency.getBalance(target.id)}`);
             } else if (command === 'inventory') {
                 const target = message.author;
                 const user = await Users.findOne({ where: { user_id: target.id } });
