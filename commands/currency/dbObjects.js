@@ -22,7 +22,7 @@ Reflect.defineProperty(Users.prototype, 'addItem', {
 	/* eslint-disable-next-line func-name-matching */
 	value: async function addItem(item, message, currency, numItems) {
 		const userItem = await UserItems.findOne({
-			where: { user_id: this.user_id, item_id: item.id },
+			where: { user_id: this.user_id, item_id: item.id, sect: item.sect},
 		});
 		
 		//Makes it so you can only buy as many items as you can afford
@@ -38,7 +38,7 @@ Reflect.defineProperty(Users.prototype, 'addItem', {
 			userItem.amount += numItemsFinal;
 			userItem.save();
 		} else {
-			UserItems.create({ user_id: this.user_id, item_id: item.id, amount: numItemsFinal, icon: item.icon });
+			UserItems.create({ user_id: this.user_id, item_id: item.id, amount: numItemsFinal, icon: item.icon, sect: item.sect });
 		}
 		//console.log(numItemsFinal);
 		return message.reply(`You bought ${numItemsFinal}  ${item.icon}  for \$${numItemsFinal * item.cost}. You have \$${currency.getBalance(message.author.id)} left.`);

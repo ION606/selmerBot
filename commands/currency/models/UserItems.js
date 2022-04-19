@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
 		icon: {
 			type: DataTypes.STRING,
 			'default': '🤖',
+		},
+		sect: {
+			type: DataTypes.STRING,
+			'default': 'M',
 		}
 	}, {
 		timestamps: false,

@@ -74,7 +74,7 @@ module.exports = {
             //Replace all instances of "command" with "commandName"
             //Replace "message.author;" with "interaction.options.getUser('user') || interaction.user;"
             const user = await Users.findOne({ where: { user_id: message.author.id } });
-            if (!user) { currency.add(message.author.id, 0); }
+            // if (!user) { currency.add(message.author.id, 0); }
 
 
             if (command == 'reset') {
@@ -104,8 +104,16 @@ module.exports = {
                     }
                 }
             } else if (command === 'balance') {
+                //BROKEN PLEASE FIX!!!
                 const target = message.author;
-                return message.reply(`${target.tag} has \$${currency.getBalance(target.id)}`);
+                let user = currency.get(target.id);
+                
+                //let user = await Users.findOne({ where: { user_id: message.author.id } });
+                if (!user) {
+                    const newUser = await Users.create({ user_id: user, balance: 0 });
+                    currency.set(target.id, newUser);
+                } else { console.log(user); }
+                return message.reply(`${target.tag} has \$${currency.getBalance(target)}`);
             } else if (command === 'inventory') {
                 const target = message.author;
                 const user = await Users.findOne({ where: { user_id: target.id } });
@@ -173,7 +181,35 @@ module.exports = {
 
             }else if (command === 'shop') {
                 const items = await CurrencyShop.findAll();
-                return message.reply(Formatters.codeBlock(items.map(i => `${i.icon} (${i.name}): \$${i.cost}`).join('\n')));
+                if (args.length == 0) {
+                    let temp = Formatters.codeBlock(items.map(i => `${i.sect}`).join(' '));
+                    temp = [...new Set(temp.split(' '))];
+
+                    return message.reply("Please use the format /shop [type] [page number]\nTypes are: " + temp);
+                }
+
+                let ind = 1;
+                let noinp = false;
+
+                if (args.length > 1) {
+                    if (args[1] < (items.length / 9)) {
+                        ind = Number(args[1]);
+                    } else {
+                        return message.reply("That number is too large");
+                    }
+                } else {
+                    noinp = true;
+                }
+
+                const items2 = items.slice((ind - 1)*10, (ind - 1)*10+10);
+                newText = Formatters.codeBlock(items2.map(i => `${i.icon} (${i.name}): \$${i.cost}`)
+                .filter(f => f.sect = args[0]).join('\n'));
+
+                if (noinp) {
+                    newText += "(Use /shop [type] [page number] to access other pages)";
+                }
+
+                return message.reply(newText);
             } else if (command === 'leaderboard') {
                 return message.reply(
                     Formatters.codeBlock(
