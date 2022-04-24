@@ -1,6 +1,6 @@
 module.exports ={
     name: 'kareoke',
-    description: 'Sing your least-favorite song with you favorite person, me!',
+    description: 'Sing your least-favorite song with your favorite person, me!',
     execute(message, args) {
         const axios = require('axios');
         const cheerio = require('cheerio')
