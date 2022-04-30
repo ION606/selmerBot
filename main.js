@@ -2,7 +2,7 @@ const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
 //const { token } = require('config.json');
 //Heroku part
-const { token } = require('dotenv').config();
+const { token } = process.env.token;
 
 
 const bot = new Client({ 
