@@ -1,8 +1,8 @@
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-//const { token } = require('config.json');
+const { token } = require('./config.json');
 //Heroku part
-const { token } = process.env.token;
+// const { token } = process.env.token;
 
 const bot = new Client({ 
     intents: [
@@ -95,11 +95,13 @@ bot.on('messageCreate', (message) => {
         case 'kareoke': bot.commands.get('kareoke').execute(message, args);
         break;
 
-        default: bot.commands.get('ECON').execute(bot, prefix, message, args, command, Users, currency);
+        default: message.channel.send("'" + message.content + "' is not a command!");
+        //Removed because Heroku doesn't work with sqlite
+        //default: bot.commands.get('ECON').execute(bot, prefix, message, args, command, Users, currency);
     }
 })
 
 
 
 //Last Line
-bot.login(process.env.token);
+bot.login(token);
