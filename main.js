@@ -1,6 +1,8 @@
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-const { token } = require('./commands/currency/config.json');
+//const { token } = require('./commands/currency/config.json');
+//Heroku part
+const { token } = require('process.env');
 
 
 const bot = new Client({ 

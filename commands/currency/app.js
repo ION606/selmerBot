@@ -5,7 +5,9 @@ module.exports = {
         const { Op } = require('sequelize');
         const { Collection, Client, Formatters, Intents } = require('discord.js');
         const { CurrencyShop } = require('./dbObjects.js');
-        const { token } = require('./config.json');
+        // const { token } = require('./config.json');
+        //Heroku
+        const { token } = require('process.env');
         const command = com2;
 
         const client = clientTemp; //new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
