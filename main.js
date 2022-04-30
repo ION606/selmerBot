@@ -4,7 +4,6 @@ const Discord = require('discord.js');
 //Heroku part
 const { token } = process.env.token;
 
-console.log(token);
 const bot = new Client({ 
     intents: [
         Intents.FLAGS.GUILDS,
@@ -103,4 +102,4 @@ bot.on('messageCreate', (message) => {
 
 
 //Last Line
-bot.login(token);
+bot.login(process.env.token);
