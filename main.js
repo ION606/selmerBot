@@ -1,6 +1,6 @@
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
+// const { token } = require('./config.json');
 //Heroku part
 // const { token } = process.env.token;
 
@@ -37,11 +37,11 @@ for (const file of commandFiles) {
     i ++;
 }
 
-//ECON SECTION
-bot.commands.set('ECON', require(`./commands/currency/app.js`));
-const currency = new Discord.Collection();
-const { Users } = require('./commands/currency/dbObjects.js');
-i++;
+// ECON SECTION
+// bot.commands.set('ECON', require(`./commands/currency/app.js`));
+// const currency = new Discord.Collection();
+// const { Users } = require('./commands/currency/dbObjects.js');
+// i++;
 
 bot.commNames.set('length', i);
 
@@ -104,4 +104,4 @@ bot.on('messageCreate', (message) => {
 
 
 //Last Line
-bot.login(token);
+bot.login(process.env.token);
