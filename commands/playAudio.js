@@ -31,7 +31,10 @@ module.exports = {
             https://github.com/porridgewithraisins/jam-bot#known-bugs)
             const stream = await ytdl(url, { filter: 'audioonly' });
             */
-            const channel = bot.channels.cache.get("930148609406685227");
+            // const channel = bot.channels.cache.get("930148609406685227");
+            const channel =  message.member.guild.voice.channel;
+            if (!channel) { message.reply("Please join a voice channel before you try this!"); }
+
             const connection = joinVoiceChannel({
                 channelId: channel.id,
                 guildId: channel.guild.id,
