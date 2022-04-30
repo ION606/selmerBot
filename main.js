@@ -48,8 +48,9 @@ bot.commNames.set('length', i);
 
 bot.on('ready', async () => {
     // bot.once('ready', async () => {
-        const storedBalances = await Users.findAll();
-        storedBalances.forEach(b => currency.set(b.user_id, b));
+        // Another Econ Section
+        // const storedBalances = await Users.findAll();
+        // storedBalances.forEach(b => currency.set(b.user_id, b));
 
         // console.log(`Logged in as ${bot.user.tag}!`);
     console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
