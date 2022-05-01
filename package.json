@@ -3,6 +3,8 @@
     "@discordjs/opus": "github:discordjs/opus",
     "@discordjs/voice": "^0.8.0",
     "apt": "^0.0.2",
+    "axios": "^0.27.2",
+    "cheerio": "^1.0.0-rc.10",
     "discord.js": "^13.6.0",
     "ffmpeg": "^0.0.4",
     "ffmpeg-static": "^5.0.0",
