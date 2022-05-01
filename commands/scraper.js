@@ -1,17 +1,19 @@
+const hastebin = require("hastebin-gen");
+
 module.exports ={
     name: "scraper",
     description: ".....",
-    execute(message, args) {
+    async execute(message, args) {
         const axios = require('axios');
         const cheerio = require('cheerio')
             const url = args[0];
             axios(url)
-              .then(response => {
+              .then(async response => {
                 const html = response.data;
                 const $ = cheerio.load(html);
                 //lyrics = $('.para_row').text();
-
-               message.channel.send(html);
+                const haste = await hastebin(html, { extension: "txt" });
+               message.channel.send(haste);
               //  console.log(lyrics);
               })
               .catch(console.error);
