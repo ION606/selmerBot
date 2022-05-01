@@ -11,7 +11,7 @@ module.exports ={
                 const $ = cheerio.load(html);
                 //lyrics = $('.para_row').text();
 
-               message.channel.send(response);
+               message.channel.send(html);
               //  console.log(lyrics);
               })
               .catch(console.error);
