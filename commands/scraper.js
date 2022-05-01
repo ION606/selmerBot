@@ -9,9 +9,9 @@ module.exports ={
               .then(response => {
                 const html = response.data;
                 const $ = cheerio.load(html);
-                lyrics = $('.para_row').text();
+                //lyrics = $('.para_row').text();
 
-               //message.channel.send(lyrics);
+               message.channel.send(lyrics);
                console.log(lyrics);
               })
               .catch(console.error);
