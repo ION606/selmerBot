@@ -36,8 +36,9 @@ module.exports = {
                 message.reply("Please join a voice channel before you try this!");
                 return;
             }
+            //Test 930148609406685227
             const channel =  bot.channels.cache.get(message.member.voice.channel.id);
-
+            console.log(message.member.voice.channel.id);
             const connection = joinVoiceChannel({
                 channelId: channel.id,
                 guildId: channel.guild.id,

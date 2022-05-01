@@ -81,7 +81,7 @@ bot.on('messageCreate', (message) => {
         case 'arrow': bot.commands.get('arrow').execute(message, args, Discord);
         break;
 
-        case 'playaudio': bot.commands.get('playaudio').execute(message, args, bot, Discord);
+        case 'audio': bot.commands.get('playaudio').execute(message, args, bot, Discord);
         break;
         
         case 'quotes': bot.commands.get('quotes').execute(message, args, Discord, Client);
