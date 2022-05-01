@@ -105,4 +105,4 @@ bot.on('messageCreate', (message) => {
 
 
 //Last Line
-bot.login("OTQ0MDQ2OTAyNDE1MDkzNzYw.Yg76MQ.A4V6Tqvrhuvq8nCafABCBrx8uuM");
+bot.login(process.env.token);
