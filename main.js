@@ -29,7 +29,7 @@ bot.econ = new Discord.Collection();
 
 const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
 
-const econFiles = fs.readdirSync('./commands/currency').filter(file => file.endsWith('.js'));;
+
 
 let i = 0;
 for (const file of commandFiles) {
@@ -40,6 +40,7 @@ for (const file of commandFiles) {
     i ++;
 }
 
+// const econFiles = fs.readdirSync('./commands/currency').filter(file => file.endsWith('.js'));;
 // ECON SECTION
 // bot.commands.set('ECON', require(`./commands/currency/app.js`));
 // const currency = new Discord.Collection();
