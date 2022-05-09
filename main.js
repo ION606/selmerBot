@@ -54,6 +54,7 @@ bot.on('ready', async () => {
 
         // console.log(`Logged in as ${bot.user.tag}!`);
     console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
+    console.log("Look into integrating MySQL into SelmerBot instead of SQLite");
 });
 
 
@@ -102,7 +103,7 @@ bot.on('messageCreate', (message) => {
     }
 })
 
-
+//Look into integrating MySQL into SelmerBot instead of SQLite
 
 //Last Line
 bot.login(process.env.token);
