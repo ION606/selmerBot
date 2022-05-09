@@ -16,6 +16,9 @@ const bot = new Client({
 const prefix = '/';
 
 
+//MongoDB integration
+const uri = process.env.MONGODB_URI;
+
 const fs = require('fs');
 const { exit } = require('process');
 bot.commands = new Discord.Collection();
