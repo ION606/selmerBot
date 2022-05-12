@@ -72,7 +72,7 @@ function checkAndUpdateBal(dbo, item, message, args) {
         } else {
             let temp = doc[0];
             dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { balance: doc[0].balance -= icost }});
-            message.reply("You have bought " + item.name + " for " + icost + "!");
+            message.reply("You have bought " + item.name + " for $" + icost + "!");
             return true;
         }
     });
@@ -161,6 +161,13 @@ function printInventory(dbo, message) {
 }
 
 
+function getBalance(dbo, message) {
+    dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) {
+        message.reply('Your current balance is $' + String(doc[0].balance));
+    });
+}
+
+
 function getShop(message, args, items) {
     if (args.length == 0) {
         let temp = Formatters.codeBlock(items.map(i => `${i.sect}`).join(' '));
@@ -244,6 +251,8 @@ module.exports = {
                     rank(dbo, message, xp_list);
                 } else if (command == 'inventory') {
                     printInventory(dbo, message);
+                } else if (command == 'balance') {
+                    getBalance(dbo, message);
                 } else {
                     message.channel.send("'" + message.content + "' is not a command!");
                 }
