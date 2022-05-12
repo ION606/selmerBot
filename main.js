@@ -7,7 +7,7 @@ const BASE_LVL_XP = 20;
 
 // const { token } = require('./config.json');
 //Heroku part
-const { token } = process.env.token;
+// const { token } = process.env.token;
 
 const bot = new Client({ 
     intents: [
@@ -150,6 +150,6 @@ bot.on('messageCreate', (message) => {
 //Look into integrating MySQL into SelmerBot instead of SQLite
 
 //Last Line(s)
-bot.login(token);
+// bot.login(token);
 
-// bot.login(process.env.token);
+bot.login(process.env.token);
