@@ -117,8 +117,10 @@ bot.on('messageCreate', (message) => {
     //Performes the command
     //Anime uses if/else, all else uses switch (can't make a multi-case case)
     if (command.indexOf('anime') != -1) {
+        console.log("Anime");
         bot.commands.get('ANIME').execute(command, message, args, bot);
-    } else if (command.indexOf('MANGA'))  {
+    } else if (command.indexOf('MANGA') != -1)  {
+        console.log("Manga");
         //Do nothing for now
     } else {
         switch(command) {
