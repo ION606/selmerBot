@@ -1,7 +1,7 @@
 module.exports = {
     name: "links",
     description: "A helpful list of links to all of Selmer's wonderful websites",
-    execute(message, args, Discord) {
+    execute(message, args, Discord, Client, bot) {
         const newEmbed = new Discord.MessageEmbed()
         .setColor('#002eff')
         .setTitle("Selmer's Links")

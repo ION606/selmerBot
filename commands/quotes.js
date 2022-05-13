@@ -1,7 +1,7 @@
 module.exports = {
     name: 'quotes',
     description: "A public version of Extra Credit",
-    execute(message) {
+    execute(message, args, Discord, Client, bot) {
         let dm;
         let num = Math.floor(Math.random() * 10);
         

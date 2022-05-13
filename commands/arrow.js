@@ -1,7 +1,7 @@
 module.exports = {
     name: 'arrow',
     description: 'Engage in a trademarked activity and throw an arrow at a trash can',
-    async execute(message, args) {
+    async execute(message, args, Discord, Client, bot) {
         let counter = 0;
         arrow = '>';
         while (true) {

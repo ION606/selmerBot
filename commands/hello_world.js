@@ -1,7 +1,7 @@
 module.exports = {
-    name: "Hello World",
+    name: "test",
     description: "HI SELMER",
-    execute(message, args) {
+    execute(message, args, Discord, Client, bot) {
         message.channel.send("HI SELMER!!!");
     }
 }

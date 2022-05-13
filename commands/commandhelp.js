@@ -1,7 +1,7 @@
 module.exports ={
     name: "help",
     description: "Gets help for all of Selmer Bot's commands",
-    execute(message, Client) {
+    execute(message, args, Discord, Client, bot) {
         const newEmbed = new Discord.MessageEmbed()
         .setColor('#002eff')
         .setTitle('My professional resume')

@@ -48,6 +48,8 @@ bot.commNames = new Discord.Collection();
 
 bot.econ = new Discord.Collection();
 
+bot.anime = new Discord.Collection();
+
 const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
 
 
@@ -61,9 +63,14 @@ for (const file of commandFiles) {
     i ++;
 }
 
+//Anime/manga section
+const afiles = fs.readdirSync('./commands/anime').filter(file => file.endsWith('.js'));
+for (const file of afiles) {
+    const command = require(`./commands/anime/${file}`);
+    bot.anime.set(command.name, command);
+}
+
 // const econFiles = fs.readdirSync('./commands/inventory').filter(file => file.endsWith('.js'));;
-bot.commands.set('ANIME', require(`./commands/anime_and_manga/anime_main`));
-bot.commands.set('MANGA', require(`./commands/anime_and_manga/manga_main`));
 // const currency = new Discord.Collection();
 // const { Users } = require('./commands/currency/dbObjects.js');
 // i++;
@@ -118,49 +125,17 @@ bot.on('messageCreate', (message) => {
     //Anime uses if/else, all else uses switch (can't make a multi-case case)
     if (command.indexOf('anime') != -1) {
         console.log("Anime");
-        bot.commands.get('ANIME').execute(command, message, args, bot);
+        bot.anime.get(command).execute(message, args);
+        switch(command) {
+            case 'top_anime': bot.anime.get('top_anime').execute(message, args);
+        }
     } else if (command.indexOf('MANGA') != -1)  {
         console.log("Manga");
         //Do nothing for now
     } else {
-        switch(command) {
-            case 'test': bot.commands.get('Hello World').execute(message, args);
-            break;
+        if(bot.commands.has(command)) { bot.commands.get(command).execute(message, args, Discord, Client, bot); }
 
-            case 'profile': bot.commands.get('profile').execute(message, args, Discord);
-            break;
-
-            case 'links': bot.commands.get('links').execute(message, args, Discord);
-            break;
-
-            case 'arrow': bot.commands.get('arrow').execute(message, args, Discord);
-            break;
-
-            case 'audio': bot.commands.get('playaudio').execute(message, args, bot, Discord);
-            break;
-            
-            case 'quotes': bot.commands.get('quotes').execute(message, args, Discord, Client);
-            break;
-
-            case 'extracredit': bot.commands.get('EC').execute(message);
-            break;
-
-            case 'scrape': bot.commands.get('scraper').execute(message, args);
-            break;
-
-            case 'kareoke': bot.commands.get('kareoke').execute(message, args);
-            break;
-
-            case 'react': bot.commands.get('reaction').execute(message, args, bot);
-            break;
-
-            case 'stocks': bot.commands.get('stocks').execute(message, args);
-            break;
-
-            default: bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection);
-            //Removed because Heroku doesn't work with sqlite
-            //default: bot.commands.get('ECON').execute(bot, prefix, message, args, command, Users, currency);
-        }
+        else { bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
     }
 })
 

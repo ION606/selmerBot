@@ -1,7 +1,7 @@
 module.exports = {
     name: "profile",
     description: "Posts a description of Monsieur Sleemer himself",
-    execute(message, args, Discord) {
+    execute(message, args, Discord, Client, bot) {
         const newEmbed = new Discord.MessageEmbed()
         .setColor('#002eff')
         .setTitle('My professional resume')

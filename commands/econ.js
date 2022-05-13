@@ -262,6 +262,4 @@ module.exports = {
         //Close the database
         client.close();
     }
-    
-
 }

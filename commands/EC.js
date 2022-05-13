@@ -1,7 +1,7 @@
 module.exports = {
-    name: 'EC',
+    name: 'extracredit',
     description: "Selmer Bot Dm's you for some *AHEM* extra credit",
-    execute(message) {
+    execute(message, args, Discord, Client, bot) {
         let dm;
         let num = Math.floor(Math.random() * 10);
         

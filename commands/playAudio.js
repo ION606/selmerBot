@@ -12,8 +12,8 @@ const player = createAudioPlayer();
 
 
 module.exports = {
-    name: "playaudio",
-    async execute(message, args, bot) {
+    name: "audio",
+    async execute(message, args, Discord, Client, bot) {
             // message.channel.send("This command has not been set up yet\nSorry!");
             // return;
             if (args[0] == "play") {

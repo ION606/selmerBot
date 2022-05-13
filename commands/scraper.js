@@ -1,9 +1,9 @@
 const hastebin = require("hastebin-gen");
 
 module.exports ={
-    name: "scraper",
+    name: "scrape",
     description: ".....",
-    async execute(message, args) {
+    async execute(message, args, Discord, Client, bot) {
         const axios = require('axios');
         const cheerio = require('cheerio')
             const url = args[0];

@@ -1,7 +1,7 @@
 module.exports ={
     name: 'kareoke',
     description: 'Sing your least-favorite song with your favorite person, me!',
-    execute(message, args) {
+    execute(message, args, Discord, Client, bot) {
         const axios = require('axios');
         const cheerio = require('cheerio')
             const url = args[0];

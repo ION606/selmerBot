@@ -3,4 +3,4 @@ config.json
 .env
 .sqlite
 database.sqlite
-reactions.js
+temp.js
