@@ -1,4 +1,3 @@
-const { db } = require('./guild');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 // const { update } = require('apt');
 const { Collection, Client, Formatters, Intents } = require('discord.js');

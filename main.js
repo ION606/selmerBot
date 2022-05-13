@@ -14,7 +14,8 @@ const bot = new Client({
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES,
         Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-        Intents.FLAGS.GUILD_VOICE_STATES
+        Intents.FLAGS.GUILD_VOICE_STATES,
+        Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS
     ],
 });
 
@@ -23,9 +24,7 @@ const prefix = '/';
 
 //MongoDB integration
 const mongouri = process.env.MONGODB_URI;
-const GuildModel = require('./commands/inventory/models/guild');
 const { connect } = require('mongoose');
-
 
 bot.on("guildCreate", guild => {
     // guild.owner.send('Thanks! You can use +help to discover commands.')
@@ -63,8 +62,8 @@ for (const file of commandFiles) {
 }
 
 // const econFiles = fs.readdirSync('./commands/inventory').filter(file => file.endsWith('.js'));;
-// ECON SECTION
-bot.commands.set('ECON', require(`./commands/inventory/models/app`));
+bot.commands.set('ANIME', require(`./commands/anime_and_manga/anime_main`));
+bot.commands.set('MANGA', require(`./commands/anime_and_manga/manga_main`));
 // const currency = new Discord.Collection();
 // const { Users } = require('./commands/currency/dbObjects.js');
 // i++;
@@ -90,7 +89,6 @@ bot.on('ready', async () => {
         
     });
 
-    //XP section (start at 2 bc you're already at lvl 1)
     //Note the xp numbers are a little wonky on levels 6, 8 and 13 (why though?)
     //See https://stackoverflow.com/questions/72212928/why-are-the-differences-between-my-numbers-inconsistent-sort-of-compund-interes
     for (let i = 1; i < 101; i ++) {
@@ -98,6 +96,10 @@ bot.on('ready', async () => {
         let amount = BASE_LVL_XP * (Math.ceil(Math.pow((1.1), (2 * i))) + i);
         xp_collection.set(i+1, amount);
     }
+
+
+    //Reaction map area
+    
 
     console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
 });
@@ -113,37 +115,50 @@ bot.on('messageCreate', (message) => {
 
     //Check if the user has sufficient permission
     //Performes the command
-    switch(command) {
-        case 'test': bot.commands.get('Hello World').execute(message, args);
-        break;
+    //Anime uses if/else, all else uses switch (can't make a multi-case case)
+    if (command.indexOf('anime') != -1) {
+        bot.commands.get('ANIME').execute(command, message, args, bot);
+    } else if (command.indexOf('MANGA'))  {
+        //Do nothing for now
+    } else {
+        switch(command) {
+            case 'test': bot.commands.get('Hello World').execute(message, args);
+            break;
 
-        case 'profile': bot.commands.get('profile').execute(message, args, Discord);
-        break;
+            case 'profile': bot.commands.get('profile').execute(message, args, Discord);
+            break;
 
-        case 'links': bot.commands.get('links').execute(message, args, Discord);
-        break;
+            case 'links': bot.commands.get('links').execute(message, args, Discord);
+            break;
 
-        case 'arrow': bot.commands.get('arrow').execute(message, args, Discord);
-        break;
+            case 'arrow': bot.commands.get('arrow').execute(message, args, Discord);
+            break;
 
-        case 'audio': bot.commands.get('playaudio').execute(message, args, bot, Discord);
-        break;
-        
-        case 'quotes': bot.commands.get('quotes').execute(message, args, Discord, Client);
-        break;
+            case 'audio': bot.commands.get('playaudio').execute(message, args, bot, Discord);
+            break;
+            
+            case 'quotes': bot.commands.get('quotes').execute(message, args, Discord, Client);
+            break;
 
-        case 'extracredit': bot.commands.get('EC').execute(message);
-        break;
+            case 'extracredit': bot.commands.get('EC').execute(message);
+            break;
 
-        case 'scrape': bot.commands.get('scraper').execute(message, args);
-        break;
+            case 'scrape': bot.commands.get('scraper').execute(message, args);
+            break;
 
-        case 'kareoke': bot.commands.get('kareoke').execute(message, args);
-        break;
+            case 'kareoke': bot.commands.get('kareoke').execute(message, args);
+            break;
 
-        default: bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection);
-        //Removed because Heroku doesn't work with sqlite
-        //default: bot.commands.get('ECON').execute(bot, prefix, message, args, command, Users, currency);
+            case 'react': bot.commands.get('reaction').execute(message, args, bot);
+            break;
+
+            case 'stocks': bot.commands.get('stocks').execute(message, args);
+            break;
+
+            default: bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection);
+            //Removed because Heroku doesn't work with sqlite
+            //default: bot.commands.get('ECON').execute(bot, prefix, message, args, command, Users, currency);
+        }
     }
 })
 
