@@ -44,38 +44,24 @@ bot.on("guildCreate", guild => {
 
 bot.commands = new Discord.Collection();
 
-bot.commNames = new Discord.Collection();
-
-bot.econ = new Discord.Collection();
-
-bot.anime = new Discord.Collection();
-
 const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
 
 
-
-let i = 0;
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-
-    bot.commands.set(command.name, command);
-    bot.commNames.set(i, [command.name, command.description]);
-    i ++;
-}
-
-//Anime/manga section
-const afiles = fs.readdirSync('./commands/anime').filter(file => file.endsWith('.js'));
-for (const file of afiles) {
-    const command = require(`./commands/anime/${file}`);
-    bot.anime.set(command.name, command);
-}
+bot.commands = new Discord.Collection();
+fs.readdirSync('./commands')
+  .forEach(dir => {
+    fs.readdirSync(`./commands/${dir}`)
+      .filter(file => file.endsWith('.js'))
+      .forEach(file => {
+         const command = require(`./commands/${dir}/${file}`);
+         bot.commands.set(command.name, command);
+      });
+  });
 
 // const econFiles = fs.readdirSync('./commands/inventory').filter(file => file.endsWith('.js'));;
 // const currency = new Discord.Collection();
 // const { Users } = require('./commands/currency/dbObjects.js');
 // i++;
-
-bot.commNames.set('length', i);
 
 //XP Table section
 let xp_collection = new Map();
@@ -122,21 +108,10 @@ bot.on('messageCreate', (message) => {
 
     //Check if the user has sufficient permission
     //Performes the command
-    //Anime uses if/else, all else uses switch (can't make a multi-case case)
-    if (command.indexOf('anime') != -1) {
-        console.log("Anime");
-        bot.anime.get(command).execute(message, args);
-        switch(command) {
-            case 'top_anime': bot.anime.get('top_anime').execute(message, args);
-        }
-    } else if (command.indexOf('MANGA') != -1)  {
-        console.log("Manga");
-        //Do nothing for now
-    } else {
-        if(bot.commands.has(command)) { bot.commands.get(command).execute(message, args, Discord, Client, bot); }
 
-        else { bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
-    }
+    if(bot.commands.has(command)) { bot.commands.get(command).execute(message, args, Discord, Client, bot); }
+
+    else { bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
 })
 
 //Look into integrating MySQL into SelmerBot instead of SQLite
