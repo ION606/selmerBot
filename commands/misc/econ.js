@@ -211,7 +211,7 @@ module.exports = {
 
         const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
         client.connect(err => {
-            const db = client.db(server);
+            const db = client.db(String(server) + "[ECON]");
             const dbo = db.collection(id);
             if (err) { return console.log(err); }
             //Initialize if necessary
@@ -225,6 +225,7 @@ module.exports = {
 
                 //test area
                 if (command == 'xp' || command == 'adbal') {
+                    //Selmer Dev only command
                     if (message.member.roles.cache.has('944048889038774302')) {
                         if (command == 'xp') {
                             return addxp(message, dbo, Number(args[0]), xp_list);

@@ -1,4 +1,4 @@
-const { Client, Intents } = require('discord.js');
+const { Client, Intents, Permissions } = require('discord.js');
 const Discord = require('discord.js');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const fs = require('fs');
@@ -27,14 +27,20 @@ const mongouri = process.env.MONGODB_URI;
 const { connect } = require('mongoose');
 
 bot.on("guildCreate", guild => {
-    // guild.owner.send('Thanks! You can use +help to discover commands.')
+    guild.members.fetch
+    guild.roles.create({ name: 'Selmer Bot Mod' });
+/*
+    const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
+    let owner = guild.members.fetch(guild.ownerID);
+    owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the <@&' + role + '> role.');
+*/
 
-    //Get total inventory
+    //Get custom inventory
     const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
     client.connect(err => {
-      const collection = client.db(guild).collection("shop");
+      const collection = client.db(String(guild)).collection("shop");
       // perform actions on the collection object
-      console.log(guild);
+      collection.insertOne({ owner: guild.ownerId });
       client.close();
     });
 });
@@ -92,7 +98,6 @@ bot.on('ready', async () => {
 
 
     //Reaction map area
-    
 
     console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
 });
@@ -108,8 +113,10 @@ bot.on('messageCreate', (message) => {
 
     //Check if the user has sufficient permission
     //Performes the command
+    //Admin section
+    if (command == 'reactionrole') { bot.commands.get(command).execute(message, args, Discord, bot); }
 
-    if(bot.commands.has(command)) { bot.commands.get(command).execute(message, args, Discord, Client, bot); }
+    else if(bot.commands.has(command)) { bot.commands.get(command).execute(message, args, Discord, Client, bot); }
 
     else { bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
 })
