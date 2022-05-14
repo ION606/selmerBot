@@ -9,7 +9,7 @@ module.exports = {
                 let s = `Title: ${s.title}\n`;
                 s += ``
             } else if (args[0] != 'full') {
-
+                
             } else {
 
             }
