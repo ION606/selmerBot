@@ -1,7 +1,7 @@
 const scraper = require('mal-scraper');
 module.exports = {
     name: 'asearch',
-    description: 'Selmer bot gives you either an explanation or a list of stats',
+    description: 'Selmer bot gives you info on an anime',
     async execute(message, args, Discord, Client, bot) {
         if (args.length < 1) { return message.reply("Please specify an anime!"); }
         let name = "";
@@ -34,7 +34,8 @@ module.exports = {
                 if (data.aired) { temp +=  `. This anime ran for ${data.aired} for a total of ${data.episodes} episodes.`}
                 else { temp += ` and is still airing with ${data.episodes} so far!`}
 
-                temp += ` This anime has a score of ${data.score} and is ${data.popularity} on MyAnimeList!`;
+                temp += ` This anime has a score of ${data.score} and is ${data.popularity} on MyAnimeList!\n`;
+                temp += `You can see a trailer for ${data.title} here: ${data.trailer}`;
                 temp += `\n\n(to see a summary of the anime, use '${bot.prefix}asearch <anime name> ~summary')`;
                 
                 message.channel.send({ embeds: [new Discord.MessageEmbed().setImage(data.picture)]});
