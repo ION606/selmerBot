@@ -19,7 +19,9 @@ const bot = new Client({
     ],
 });
 
-const prefix = '/';
+const prefix = '!';
+bot.prefix = new String;
+bot.prefix = prefix;
 
 
 //MongoDB integration
