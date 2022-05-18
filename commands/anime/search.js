@@ -15,7 +15,7 @@ module.exports = {
 
         scraper.getInfoFromName(name).then((data) => {
             //If the user didn't specify, give a stat list
-            if (args[args.length - 1] == 'stats') {
+            if (args[args.length - 1] == '~stats') {
                 const newEmbed = new Discord.MessageEmbed()
                 .setColor('#002eff')
                 .setTitle(data.title)
