@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 // const { update } = require('apt');
 const { Collection, Client, Formatters, Intents } = require('discord.js');
+const { CLIENT_ODBC } = require('mysql/lib/protocol/constants/client');
 const BASE_PAY = 5;
 const BASE_LVL_XP = 35;
 //Note that leveling up to the next level takes 10% more xp than the previous one
@@ -38,6 +39,13 @@ function addxp(message, dbo, amt, xp_list) {
         }
 
         dbo.updateOne({balance: temp.balance}, { $set: { xp: txp}});
+    });
+}
+
+
+function getBalance(dbo, message) {
+    dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) {
+        return message.reply('Your current balance is $' + String(doc[0].balance));
     });
 }
 
@@ -95,10 +103,10 @@ function buy(id, message, args, dbo, shop, xp_list) {
     var newObj = { name: item[0].name, cost: item[0].cost, icon: item[0].icon, sect: item[0].sect};
 
     addxp(message, dbo, Math.ceil(item[0].cost * 1.2), xp_list);
+    
     dbo.find(newObj, {$exists: true}).toArray(function(err, doc) {
         if(String(doc)) {
             let newnum = doc[0].num + Number(args[0]);
-            console.log(newnum);
             dbo.updateOne({ name: item[0].name }, {$set: {num: newnum}});
         } else {
             dbo.insertOne({ name: item[0].name, cost: item[0].cost, icon: item[0].icon, sect: item[0].sect, num: Number(args[0])});
@@ -107,20 +115,44 @@ function buy(id, message, args, dbo, shop, xp_list) {
 };
 
 
-function sell(id, message, args, dbo, shop) {
+function sell(id, message, args, dbo, shop, xp_list) {
     if (args.length < 2) { return; }
-    if (!isNum(args[0])) { return message.reply("Please enter a number for query 2"); }
-    var newObj = { name: args[1] };
-
+    if (!isNum(args[0])) { return message.reply("Please enter a number for query 1"); }
+    
     let query = args[1];
-    let item = shop.filter(function (item) { return item.name.toLowerCase() == query.toLowerCase(); });
-    if (!String(item)) { return message.reply("This item does not exist!"); }
-    if (!success) { return; }
+    var newObj = { name: query };
 
-    dbo.find(newObj, {$exists: true}).toArray(function(err, doc) {
-        return console.log(String(doc));
+    let item = shop.filter(function (titem) { return titem.name.toLowerCase() == query.toLowerCase(); });
+    if (!String(item)) { return message.reply("This item does not exist!"); }
+
+    item[0] = {name: item[0].name, cost: item[0].cost, icon: item[0].icon, sect: item[0].sect};
+
+    let functional_item = item[0];
+
+    dbo.find(functional_item, {$exists: true}).toArray(function(err, doc) {
         if(String(doc)) {
-            dbo.updateOne({ name: args[1] }, {$set: {num: doc[0].num + Number(args[0])}});
+
+            //Make sure you don't sell more than you have
+            let num = Number(args[0]);
+            if (num < doc[0].num) {
+                let newNum = doc[0].num - num;
+                dbo.updateOne({ name: item[0].name }, {$set: {num: newNum}});
+            } else {
+                num = doc[0].num;
+                dbo.deleteOne({ name: item[0].name });
+            }
+
+            //Update the balance
+            let amountSoldFor = functional_item.cost * num;
+
+            dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) { 
+                let currentBal = doc[0].balance;
+                dbo.updateOne({"balance": {$exists: true}}, { $set: { balance: currentBal + amountSoldFor }});
+            });
+
+            addxp(message, dbo, Math.ceil(functional_item.cost * 1.2), xp_list);
+
+            message.reply(`You've sold ${num} ${String(functional_item.name)} for $${amountSoldFor}`);
         } else {
             message.reply("You don't own this item!");
         }
@@ -155,14 +187,8 @@ function printInventory(dbo, message) {
                 tempstring += String(val.num) + " " + val.name + " (" + val.icon + ")\n";
             }
         });
+        if (tempstring == "") { tempstring += "You have nothing in your inventory!"; }
         message.reply(tempstring);
-    });
-}
-
-
-function getBalance(dbo, message) {
-    dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) {
-        message.reply('Your current balance is $' + String(doc[0].balance));
     });
 }
 
@@ -210,6 +236,7 @@ module.exports = {
         const server = message.guild.id;
 
         const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+        if (client.writeConcern || client.writeConcern) { return client.close(); }
         client.connect(err => {
             const db = client.db(String(server) + "[ECON]");
             const dbo = db.collection(id);
@@ -253,6 +280,8 @@ module.exports = {
                     printInventory(dbo, message);
                 } else if (command == 'balance') {
                     getBalance(dbo, message);
+                } else if (command == 'sell') {
+                    sell(id, message, args, dbo, items, xp_list);
                 } else {
                     message.channel.send("'" + message.content + "' is not a command!");
                 }
