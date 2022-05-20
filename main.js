@@ -5,6 +5,19 @@ const fs = require('fs');
 const { exit } = require('process');
 const BASE_LVL_XP = 20;
 
+
+//Token area
+//Adding integration for development mode
+let token;
+let inDebugMode = false;
+if (process.env.token != undefined) {
+    //Use "setx NAME VALUE" in the local powershell terminal to set
+    token = process.env.token;
+} else {
+    token = require('./config.json').token;
+    inDebugMode = true;
+}
+
 // const { token } = require('./config.json');
 //Heroku part
 // const { token } = process.env.token;
@@ -25,7 +38,14 @@ bot.prefix = prefix;
 
 
 //MongoDB integration
-const mongouri = process.env.MONGODB_URI;
+//Development support
+let mongouritemp;
+if (process.env.MONGODB_URI) {
+    mongouritemp = process.env.MONGODB_URI;
+} else {
+    mongouritemp = require('./config.json');
+}
+const mongouri = mongouritemp;
 const { connect } = require('mongoose');
 
 bot.on("guildCreate", guild => {
@@ -100,8 +120,11 @@ bot.on('ready', async () => {
 
 
     //Reaction map area
-
-    console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
+    if (!inDebugMode) {
+        console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
+    } else {
+        console.log("Testing testing 1 2 5...");
+    }
 });
 
 
@@ -128,4 +151,4 @@ bot.on('messageCreate', (message) => {
 //Last Line(s)
 // bot.login(token);
 
-bot.login(process.env.token);
+bot.login(token);
