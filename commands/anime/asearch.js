@@ -14,7 +14,6 @@ module.exports = {
         }
 
         scraper.getInfoFromName(name).then((data) => {
-            //If the user didn't specify, give a stat list
             if (args[args.length - 1] == '~stats') {
                 const newEmbed = new Discord.MessageEmbed()
                 .setColor('#002eff')
@@ -30,7 +29,7 @@ module.exports = {
                 
                 message.channel.send({ embeds: [newEmbed] });
             } else if (args[args.length - 1] == '~fancy') {
-                let temp =  `The ${data.genres.join(", ")} anime "${data.title}" first aired on ${data.premiered}`;
+                let temp =  `The ${data.genres.join(", ")} anime _${data.title}_ first aired on ${data.premiered}`;
                 if (data.aired) { temp +=  `. This anime ran for ${data.aired} for a total of ${data.episodes} episodes.`}
                 else { temp += ` and is still airing with ${data.episodes} so far!`}
 
