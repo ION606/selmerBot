@@ -2,8 +2,19 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 // const { update } = require('apt');
 const { Collection, Client, Formatters, Intents } = require('discord.js');
 const { CLIENT_ODBC } = require('mysql/lib/protocol/constants/client');
-const BASE_PAY = 5;
-const BASE_LVL_XP = 35;
+
+//Declair an "enum" to help with BASE calculations
+const BASE = {
+    PAY: 5,
+    HP: 5,
+    MP: 10
+}
+
+const STATE = {
+    IDLE: 0,
+    FIGHTING: 1,
+    PRONE: 2
+}
 //Note that leveling up to the next level takes 10% more xp than the previous one
 
 
@@ -14,6 +25,25 @@ function isNum(arg) {
 };
 
 
+function CreateNewCollection(message, client, server, id, opponent = null, game = null) {
+    client.connect(err => {
+        const db = client.db(String(server) + "[ECON]");
+        const dbo = db.collection(id);
+        if (err) { return console.log(err); }
+        db.listCollections({name: id})
+        .next(function(err, collinfo) {
+            if (err) { return console.log(err); }
+            if (!collinfo) {
+                message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
+                dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hp: BASE.HP, mp: BASE.MP, game: game, opponent: opponent, state: STATE.IDLE});
+            }
+        });
+    });
+
+    client.close();
+}
+
+
 function addxp(message, dbo, amt, xp_list) {
     if (!isNum(amt)) { return console.log("This isn't a number...."); }
 
@@ -21,8 +51,8 @@ function addxp(message, dbo, amt, xp_list) {
         if (!String(doc)) { return console.log("ERROR!\nThis account does not exist!"); }
 
         temp = doc[0];
-        let rank = temp.rank + 1;
-        const txp =  temp.xp + amt;
+        let rank = temp.rank + 1; //The table starts at rank 0, the user starts at rank 1
+        const txp =  amt; /*temp.xp + amt; // This part was used before the xp check was made in the 'work' function */
         //If the rank is less than 100, you can still advance
         if (rank < 101) {
             let needed = xp_list.get(rank);
@@ -165,15 +195,18 @@ function work(dbo, message, xp_list) {
     let date = fulldate.getDate();
     dbo.find({"lastdayworked": {$exists: true}}).toArray(function(err, doc) {
         if (!String(doc)) { return message.reply("Your account doesn't exist, please contact the mods for support"); }
-        if (doc[0].lastdayworked == date) {
+        if (doc[0].lastdayworked == 111111) {//date
             message.reply("You've already worked today, try again tomorrow!");
         } else {
             //Amount to be paid
             let amt = 0;
-            amt = BASE_PAY * doc[0].rank;
-            dbo.updateOne({balance: doc[0].balance, rank: doc[0].rank}, { $set: { balance: amt, lastdayworked: date }});
-            addxp(message, dbo, Math.ceil(amt*1.5), xp_list);
-            message.channel.send('<@' + message.author.id + '> worked and earned $' + amt +' and ' + Math.ceil(amt*1.5) + ' xp!');
+            amt = (BASE.PAY * doc[0].rank);
+            let xp_earned = doc[0].xp + Math.ceil(amt*1.5);
+
+            //Update the amount to the new TOTAL balance
+            dbo.updateOne({"balance": {$exists: true}}, { $set: { balance: doc[0].balance + amt, lastdayworked: date }});
+            addxp(message, dbo, xp_earned, xp_list);
+            message.channel.send('<@' + message.author.id + '> worked and earned $' + amt +' and ' + String(xp_earned) + ' xp!');
         }
     });
 }
@@ -193,12 +226,12 @@ function printInventory(dbo, message) {
 }
 
 
-function getShop(message, args, items) {
+function getShop(message, args, items, bot) {
     if (args.length == 0) {
         let temp = Formatters.codeBlock(items.map(i => `${i.sect}`).join(' '));
         temp = [...new Set(temp.split(' '))];
 
-        return message.reply("Please use the format /shop [type] [page number]\nTypes are: " + temp);
+        return message.reply(`Please use the format ${bot.prefix}shop [type] [page number]\nTypes are: ${temp}`);
     }
 
     let ind = 1;
@@ -218,17 +251,23 @@ function getShop(message, args, items) {
     .filter(f => f.sect = args[0]).join('\n'));
 
     if (noinp) {
-        newText += "(Use /shop [type] [page number] to access other pages)";
+        newText += `(Use ${bot.prefix}shop [type] [page number] to access other pages)`;
     }
 
     return message.reply(newText);
 }
 
+
+function econHelp() {
+    let l = ["buy", 'shop', 'work', 'rank', 'inventory', 'balance', 'sell']
+    
+    return l.join(", ");
+}
 //#endregion
 
 //Main Code
 module.exports = {
-    name: 'ECON',
+    name: 'econ',
     description: 'ECON',
     async execute(bot, message, args, command, Discord, mongouri, items, xp_list) {
         //Set Discord vars
@@ -236,60 +275,68 @@ module.exports = {
         const server = message.guild.id;
 
         const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-        if (client.writeConcern || client.writeConcern) { return client.close(); }
+        if (client.writeConcern || client.writeConcern) { 
+            client.close();
+            return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
+         }
+        //Initialize if necessary
+        CreateNewCollection(message, client, server, id);
+
         client.connect(err => {
             const db = client.db(String(server) + "[ECON]");
             const dbo = db.collection(id);
             if (err) { return console.log(err); }
-            //Initialize if necessary
-            db.listCollections({name: id})
-            .next(function(err, collinfo) {
-                if (!collinfo) {
-                    message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
-                    dbo.insertOne({balance: 100, rank: 1, lastdayworked: 0, xp: 0});
-                    return;
-                }
 
-                //test area
-                if (command == 'xp' || command == 'adbal') {
-                    //Selmer Dev only command
-                    if (message.member.roles.cache.has('944048889038774302')) {
-                        if (command == 'xp') {
-                            return addxp(message, dbo, Number(args[0]), xp_list);
-                        }
+            //test area
+            if (command == 'xp' || command == 'adbal') {
+                //Selmer Dev only command
+                if (message.member.roles.cache.has('944048889038774302')) {
+                    if (command == 'xp') {
+                        return addxp(message, dbo, Number(args[0]), xp_list);
                     }
                 }
+            }
 
-                //Command Area
-                if(command == 'init') {
-                    //Add security check here
-                    // init.execute(bot, message, args, command, dbo, Discord, connect);
-                    return;
-                } else if (command == 'checkinv') {
-                    const req = dbo.findOne({ id: message.guild.id });
-                    if (!req) { return message.reply("Doc doesn't exist!"); }
-                } else if (command == 'buy') {
-                    buy(id, message, args, dbo, items, xp_list);
-                } else if (command == 'shop') {
-                    getShop(message, args, items);
-                } else if (command == 'work') {
-                    work(dbo, message, xp_list);
-                } else if (command == 'rank') {
-                    rank(dbo, message, xp_list);
-                } else if (command == 'inventory') {
-                    printInventory(dbo, message);
-                } else if (command == 'balance') {
-                    getBalance(dbo, message);
-                } else if (command == 'sell') {
-                    sell(id, message, args, dbo, items, xp_list);
-                } else {
-                    message.channel.send("'" + message.content + "' is not a command!");
-                }
+            //Command Area
+            if(command == 'init') {
+                //Add security check here
+                // init.execute(bot, message, args, command, dbo, Discord, connect);
+                return;
+            } else if (command == 'buy') {
+                buy(id, message, args, dbo, items, xp_list);
+            } else if (command == 'shop') {
+                getShop(message, args, items, bot);
+            } else if (command == 'work') {
+                work(dbo, message, xp_list);
+            } else if (command == 'rank') {
+                rank(dbo, message, xp_list);
+            } else if (command == 'inventory') {
+                printInventory(dbo, message);
+            } else if (command == 'balance') {
+                getBalance(dbo, message);
+            } else if (command == 'sell') {
+                sell(id, message, args, dbo, items, xp_list);
+            } else {
+                message.channel.send("'" + message.content + "' is not a command!");
+            }
                 
-            });
         });
 
         //Close the database
         client.close();
-    }
+    },
+
+    //Battle Updating stuff
+    addxp, checkAndUpdateBal, CreateNewCollection, econHelp, BASE, STATE
 }
+
+
+
+/*
+?????????????? What did I need this for?
+else if (command == 'checkinv') {
+                const req = dbo.findOne({ id: message.guild.id });
+                if (!req) { return message.reply("Doc doesn't exist!"); }
+            }
+
+*/

@@ -19,7 +19,7 @@ module.exports = {
             case 3: dm = 'The AI is coming for you! Buy my book to find out how to stop them!';
             break;
 
-            case 4: dm = 'Did you know I proved P=NP. The proof is on my password-encrypted tablet.\nPretty safe there I reckon';
+            case 4: dm = 'Did you know I proved P=NP? The proof is on my password-encrypted tablet.\nPretty safe there I reckon';
             break;
 
             case 5: dm = 'I hate informal logic, but there\'s nothing informal about you!';

@@ -12,7 +12,7 @@ module.exports = {
         console.log("IMPLEMENT THIS");
         
         let emoji = [...new Set(args[0])];
-        if (emoji.length > 15 || message.IndexOf(":") != -1) { return message.reply("Please enter less than 15 emojis"); }
+        if (emoji.length > 15 /*|| message.IndexOf(":") != -1*/) { return message.reply("Please enter less than 15 emojis"); }
         let notused = new Array(15);
         let counter = 0;
 

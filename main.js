@@ -78,13 +78,22 @@ const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith(
 bot.commands = new Discord.Collection();
 fs.readdirSync('./commands')
   .forEach(dir => {
-    fs.readdirSync(`./commands/${dir}`)
-      .filter(file => file.endsWith('.js'))
-      .forEach(file => {
-         const command = require(`./commands/${dir}/${file}`);
-         bot.commands.set(command.name, command);
-      });
+      if (dir != 'db') {
+        fs.readdirSync(`./commands/${dir}`)
+        .filter(file => file.endsWith('.js'))
+        .forEach(file => {
+           const command = require(`./commands/${dir}/${file}`);
+           bot.commands.set(command.name, command);
+        });
+      }
   });
+
+
+  //Set these two manually because all the seperate games can't be included in the command list (all managed by the 'game' file)
+  let temp_command = require("./commands/db/econ.js");
+  bot.commands.set('econ', temp_command);
+  temp_command = require('./commands/db/game.js');
+  bot.commands.set('game', temp_command);
 
 // const econFiles = fs.readdirSync('./commands/inventory').filter(file => file.endsWith('.js'));;
 // const currency = new Discord.Collection();
@@ -107,7 +116,10 @@ bot.on('ready', async () => {
             
             client.close();
         });
-        
+
+        //Srt status and Activity (idle and listening to !help)
+        bot.user.setActivity(`${bot.prefix}help`, { type: "LISTENING" });
+        // bot.user.setStatus('idle');
     });
 
     //Note the xp numbers are a little wonky on levels 6, 8 and 13 (why though?)
@@ -141,9 +153,17 @@ bot.on('messageCreate', (message) => {
     //Admin section
     if (command == 'reactionrole') { bot.commands.get(command).execute(message, args, Discord, bot); }
 
-    else if(bot.commands.has(command)) { bot.commands.get(command).execute(message, args, Discord, Client, bot); }
+    else if(bot.commands.has(command) && command != 'ECON') {
+        //Database access is required, change the inputs
+        if (command == 'game' || command == 'accept') {
+            bot.commands.get(command).execute(bot, message, args, command, Discord, mongouri, items, xp_collection)
+        } else {
+            bot.commands.get(command).execute(message, args, Discord, Client, bot);
+        }
+    }
 
-    else { bot.commands.get('ECON').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
+    //Catch
+    else { bot.commands.get('econ').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
 })
 
 //Look into integrating MySQL into SelmerBot instead of SQLite
