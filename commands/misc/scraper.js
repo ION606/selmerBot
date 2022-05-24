@@ -16,7 +16,11 @@ module.exports ={
                message.channel.send(haste);
               //  console.log(lyrics);
               })
-              .catch(console.error);
+              .catch(function(err) {
+                if (err.message.indexOf('The "url" argument must be of type string.') != -1) {
+                  message.reply("The URL should be a string!");
+                }
+              });
     }
 }
 
