@@ -7,7 +7,8 @@ const { CLIENT_ODBC } = require('mysql/lib/protocol/constants/client');
 const BASE = {
     PAY: 5,
     HP: 5,
-    MP: 10
+    MP: 10,
+    XP: 5
 }
 
 const STATE = {
@@ -327,7 +328,7 @@ module.exports = {
     },
 
     //Battle Updating stuff
-    addxp, checkAndUpdateBal, CreateNewCollection, econHelp, BASE, STATE
+    addxp, checkAndUpdateBal, CreateNewCollection, econHelp, addxp, BASE, STATE
 }
 
 

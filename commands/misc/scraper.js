@@ -5,7 +5,7 @@ module.exports ={
     description: ".....",
     async execute(message, args, Discord, Client, bot) {
         const axios = require('axios');
-        const cheerio = require('cheerio')
+        const cheerio = require('cheerio');
             const url = args[0];
             axios(url)
               .then(async response => {
@@ -17,9 +17,13 @@ module.exports ={
               //  console.log(lyrics);
               })
               .catch(function(err) {
-                if (err.message.indexOf('The "url" argument must be of type string.') != -1) {
+                if (err.message.indexOf('The "url" argument must be of type string') != -1) {
                   message.reply("The URL should be a string!");
+                } else {
+                  message.reply("Oops! There's been an error");
                 }
+
+                console.log(err);
               });
     }
 }

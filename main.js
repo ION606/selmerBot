@@ -9,13 +9,13 @@ const BASE_LVL_XP = 20;
 //Token area
 //Adding integration for development mode
 let token;
-let inDebugMode = false;
+let IDM = false;
 if (process.env.token != undefined) {
     //Use "setx NAME VALUE" in the local powershell terminal to set
     token = process.env.token;
 } else {
     token = require('./config.json').token;
-    inDebugMode = true;
+    IDM = true;
 }
 
 // const { token } = require('./config.json');
@@ -35,6 +35,7 @@ const bot = new Client({
 const prefix = '!';
 bot.prefix = new String;
 bot.prefix = prefix;
+bot.inDebugMode = IDM;
 
 
 //MongoDB integration
@@ -132,7 +133,7 @@ bot.on('ready', async () => {
 
 
     //Reaction map area
-    if (!inDebugMode) {
+    if (!bot.inDebugMode) {
         console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
     } else {
         console.log("Testing testing 1 2 5...");
@@ -141,6 +142,7 @@ bot.on('ready', async () => {
 
 
 bot.on('messageCreate', (message) => {
+
     //COMMAND AREA
     //Check if the prefix exists
     if (!message.content.startsWith(prefix) || message.author.bot) return;

@@ -8,11 +8,13 @@ module.exports ={
             temp += bot.commands.get('econ').econHelp();
             temp += `\n\n(remember to use '${bot.prefix}' before the command!)`;
             return message.channel.send(temp);
-        } else if (args[0] == 'game') {
+        } 
+        else if (args[0] == 'game') {
             let temp = "***Selmer Bot Commands (Games):***\n";
-            temp += bot.commands.get('game').gameHelp();
+            temp += bot.commands.get('game').allGames.join(", ");
             temp += `\n\n(remember to use '${bot.prefix}' before the command!)`;
-            return message.channel.send(temp);        }
+            return message.channel.send(temp);
+        }
 
         let temp = "***Selmer Bot Commands:***\n";
         
@@ -22,9 +24,11 @@ module.exports ={
             if (comm.name != 'verify') {
                 if (comm.name == 'econ') {
                     temp += `econ - use _!help econ_\n`;
-                } else if (comm.name == 'game') {
+                }
+                else if (comm.name == 'game') {
                     temp += `game - use _!help game_\n`;
-                }else {
+                }
+                else {
                     temp += `${comm.name.toLowerCase()} - _${comm.description}_\n`;
                 }
             }
