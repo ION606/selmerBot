@@ -52,20 +52,11 @@ const { connect } = require('mongoose');
 bot.on("guildCreate", guild => {
     guild.members.fetch
     guild.roles.create({ name: 'Selmer Bot Mod' });
-/*
+    
     const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
     let owner = guild.members.fetch(guild.ownerID);
     owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the <@&' + role + '> role.');
-*/
 
-    //Get custom inventory
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    client.connect(err => {
-      const collection = client.db(String(guild)).collection("shop");
-      // perform actions on the collection object
-      collection.insertOne({ owner: guild.ownerId });
-      client.close();
-    });
 });
 
 //MongoDB Integration end
@@ -79,7 +70,7 @@ const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith(
 bot.commands = new Discord.Collection();
 fs.readdirSync('./commands')
   .forEach(dir => {
-      if (dir != 'db') {
+      if (dir != 'db' && !dir.endsWith('.js')) {
         fs.readdirSync(`./commands/${dir}`)
         .filter(file => file.endsWith('.js'))
         .forEach(file => {
@@ -141,12 +132,19 @@ bot.on('ready', async () => {
 });
 
 
+//Button Section
+bot.on('interactionCreate', interaction => {
+	if (!interaction.isButton()) return;
+	console.log(interaction);
+});
+
+
 bot.on('messageCreate', (message) => {
 
     //COMMAND AREA
     //Check if the prefix exists
     if (!message.content.startsWith(prefix) || message.author.bot) return;
-    
+
     const args = message.content.slice(prefix.length).split(' ');
     const command = args.shift().toLowerCase();
 
