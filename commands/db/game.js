@@ -1,3 +1,5 @@
+// @ts-check
+
 const { MongoClient, ServerApiVersion } = require('mongodb');
 let ecoimport = require("./econ.js");
 let battle = require("./battle.js");
@@ -15,85 +17,126 @@ const allGames = ['battle'];
 /** Adds the game type tag to the user(s) so the system can tell what game they're playing
  * @param other_dbo optional, include if the game has two players
 */
-function Initialize(user_dbo, command, message, other_dbo = null) {
-    user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
-        let doc = docs[0];
-        if (allGames.indexOf(command) != -1) {
-            if (other_dbo != null) {
-                user_dbo.updateOne({ doc}, { $set: { game: command, opponent: other_dbo.s.namespace.collection }});
-                other_dbo.updateOne({ game: null, opponent: null}, { $set: { game: command, opponent: user_dbo.s.namespace.collection }});
-            } else {
-                user_dbo.updateOne(doc, { $set: { game: command }});
-            }
+async function Initialize(bot, user_dbo, command, message, first, second, other_dbo = null) {
+    return new Promise(async function(resolve, reject) {
+        user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
+            let doc = docs[0];
+            if (allGames.indexOf(command) != -1) {
+                if (other_dbo != null) {
+                    user_dbo.updateOne( { "game": {$exists: true} }, { $set: { game: command, opponent: other_dbo.s.namespace.collection, state: STATE.FIGHTING }});
+                    other_dbo.updateOne({ "game": {$exists: true} }, { $set: { game: command, opponent: user_dbo.s.namespace.collection, state: STATE.FIGHTING }});
+                } else {
+                    user_dbo.updateOne({ "game": {$exists: true} }, { $set: { game: command, state: STATE.FIGHTING }});
+                }
 
-        } else { console.log(`ERROR! ${command} IS NOT A GAME!`); }
+            } else { message.reply(`ERROR! ${command} IS NOT A GAME!`); }
+        });
+
+        //Create a new thread for the game (maybe uneccesary???) - done before initialize
+        let name_first = await bot.users.cache.get(first);
+        let name_second = await bot.users.cache.get(second);
+
+        // message.reply(`${first} [${name_first}], ${second} [${name_second}]`); throw 'ERR';
+        const threadname = `${name_first.username} VS ${name_second.username} [${command.toUpperCase()}]`;
+
+        const thread = await message.channel.threads.create({
+            name: threadname,
+            // type: 'GUILD_PRIVATE_THREAD',
+            autoArchiveDuration: 60,
+            reason: `N/A`,
+        });
+        
+        //Need lvl 2 boost for this
+        // thread.add(first);
+        // thread.add(second);
+
+        message.channel.send(`<@${first}> and <@${second}> have started a game of ***${command.toUpperCase()}!***`);
+
+        resolve(thread);
     });
-
-    let mentioned = message.mentions.users.keys();
-    let second = mentioned.next().value;
-    message.reply(`<@${mentioned.next().value}> and <@${second}> have started a game of ***${command.toUpperCase()}!***`);
 }
 
 
 //#region game lose/win
-function loseGame(user_dbo, xp_collection) {
+function loseGame(user_dbo, xp_collection, message, bot = null) {
+    return new Promise(function(resolve, reject) {
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
-        
-        //Update the player's xp
-        user_dbo.updateOne(doc, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: ecoimport.addxp(message, dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection) }});
+        if (doc == undefined) { return message.reply("Oops! There's been an error! Please contact support if this problem persists!"); }
+        if (doc.game == null) { return message.reply("You're not even in a game and you're trying to quit! Sad..."); }
 
-        //If remove some money (looting) [maybe implement a "friendly" game setting later with no looting]
-        let addbal = doc.rank * 2;
-        let diff = addbal;
-        if (doc.balance - addbal < 5) { addbal = addbal - doc.balance; }
-        if (doc.balance > 5) {
-            user_dbo.updateOne(doc, { $set: { balance: doc.balance - addbal}});
+        //If this function was not called from "winGame", return
+        if (doc.opponent) {
+            //If remove some money (looting) [maybe implement a "friendly" game setting later with no looting]
+            var addbal = doc.rank * 2;
+            if (doc.balance - addbal < 5) { addbal = addbal - doc.balance; }
+            if (doc.balance > 5) {
+                user_dbo.updateOne(doc, { $set: { balance: doc.balance - addbal}});
+            }
         }
-        user_dbo.updateOne(doc, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: BASE.XP * doc.rank }});
 
-        return addbal;
+        //Update the player's xp
+        ecoimport.addxp(message, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection)
+        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE }});
+
+        resolve(addbal);
     });
+});
 }
 
-function winGame(db, user_dbo, xp_collection) {
+
+function winGame(client, bot, db, user_dbo, xp_collection, message) {
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
         
-        //Update the player with xp
-        user_dbo.updateOne(doc, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank) }});
-
         //Check for an opponent
         if (doc.opponent != null) {
             let other = db.collection(doc.opponent);
-            let amt_taken = loseGame(other, xp_collection);
-            user_dbo.updateOne(doc, { $set: { balance: doc.balance + amt_taken}});
+            let promise_temp = loseGame(other, xp_collection, message);
+            
+            promise_temp.then(function(result) {
+                var amt_taken = result;
+                user_dbo.updateOne({'balance': {$exists: true}}, { $set: { balance: doc.balance + amt_taken}});
+            });
         }
+
+        //Delete the bot's record of the game
+        client.db('B|S' + bot.user.id).collection(user_dbo.s.namespace.db.substr(0, user_dbo.s.namespace.db.length - 6)).drop();
+        
+
+        //Update the player with xp
+        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank) }});
     });
 }
 
 //#endregion
 
+//replies to the message with current game specifics
+function getGame(message, args, db) {
+    let id;
+    var temp;
 
-function resetPlayer(db, user_dbo, message) {
+    if (args.length == 1 && String(args[0]).startsWith('<')) { id = args[0].substr(2, args[0].length - 3)}
+    else { id = message.author.id; }
+    var user_dbo = db.collection(message.author.id);
+
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
-        
-        if (doc.game == null) { return message.reply("You're not even in a game and you're trying to quit! Sad..."); }
-        user_dbo.updateOne(doc, { $set: { game: null, opponent: null, state: STATE.IDLE }});
+        if (doc.game == null) {
+            return message.reply(`<@${id}> is not currently playing a game!`);
+        }
 
-        let temp = `${message.author} has quit a game of ${doc.game}!`;
+        temp = `<@${id}> is currently playing "${doc.game}"`;
 
         if (doc.opponent != null) {
-            let other = db.collection(doc.opponent);
-            
+            temp += ` with <@${doc.opponent}>`
         }
+
         message.reply(temp);
     });
 }
 
-
-function acceptIsValid(other_discord, message, msg) {
+function acceptIsValid(bot, other_discord, message, msg, tag_len) {
 
     if (other_discord == undefined) {
         message.reply("This is not a valid invite!");
@@ -104,14 +147,16 @@ function acceptIsValid(other_discord, message, msg) {
     let check0 = msg.author.bot;
 
     //Author
-    let check1 = other_discord.id == message.author.id;
+    let tag = msg.content.substr(2, tag_len);
+    let check1 = Number(tag) == Number(message.author.id);
 
     //Time (within the last 5 min)
     let prev = snowflake.convertSnowflakeToDate(msg.id);
     let now = snowflake.convertSnowflakeToDate(message.id);
+    // @ts-ignore
     let diff = now - prev;
     var minutes = Math.floor((diff/1000)/60);
-    let check2 = minutes <= 5;
+    let check2 = minutes <= 5 || bot.inDebugMode;
 
     if (!check0) { message.reply("really?"); }
     else if (!check1 && check2) { message.reply("_INVALID USER_"); }
@@ -121,8 +166,41 @@ function acceptIsValid(other_discord, message, msg) {
     return (check0 && check1 && check2);
 }
 
+
+function hpmp(message, command, dbo) {
+    if (command == 'hp') {
+        dbo.find({"hp": {$exists: true}}).toArray(function(err, doc) {
+            return message.reply(`You have ${String(doc[0].hp)} hp left!`);
+        });
+    } else if (command == 'mp') { 
+        dbo.find({"mp": {$exists: true}}).toArray(function(err, doc) {
+            return message.reply(`You have ${String(doc[0].hp)} mp left!`);
+        });
+    }
+}
+
 //#endregion
 
+
+//#region GAME SPECIFIC
+function in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items) {
+
+    //Maybe fix this later......
+    let turn = doc.turn;
+    const user1 = doc[turn];
+    const user2 = doc[Number(!turn)];
+    const db = client.db(interaction.guildId + "[ECON]");
+    const dbo = db.collection(user1);
+    const other = db.collection(user2);
+    const thread = interaction.channel;
+
+    dbo.find({'game': {$exists: true}}).toArray(function (err, docs) {
+        const game = docs[0].game
+        switch (game) {
+            case 'battle': battle.handle(dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items);
+        }
+    });
+}
 
 
 module.exports ={
@@ -131,15 +209,21 @@ module.exports ={
     async execute(bot, message, args, command, Discord, mongouri, items, xp_collection) {
 
         if (!bot.inDebugMode) { return message.reply("This command is currently in development!"); }
-        
+
+
+//#region Setup
         const id = message.author.id;
         const server = message.guild.id;
 
+        // @ts-ignore
         const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
         if (client.writeConcern || client.writeConcern) { 
             client.close();
             return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
-         }
+        }
+        
+        const botdb = client.db('B|S' + bot.user.id);
+        const serverinbotdb = botdb.collection(server);
 
         //Initialize if necessary
         ecoimport.CreateNewCollection(message, client, server, id);
@@ -147,8 +231,11 @@ module.exports ={
 
         //Check for a second person and create a second database entry if neccessary
         if (message.mentions.users.first() != undefined) {
+//#TODO     //FIX THIS (NOT THE RIGHT CLIENT 100% OF THE TIME!!!!!!!)
             ecoimport.CreateNewCollection(message, client, server, message.mentions.users.first().id);
         }
+
+//#endregion
 
         client.connect(err => {
             const db = client.db(String(server) + "[ECON]");
@@ -156,14 +243,16 @@ module.exports ={
             if (err) { return console.log(err); }
 
             //Check if the client is currently in a game and act accordingly
-            //#region Check Game
+//#region Check Game
             dbo.find({"game": {$exists: true}}).toArray(async function(err, docs){
-                if (err) { return console.log(error); }
+                if (err) { return console.log(err); }
                 let doc = docs[0];
                 let game = null;
                 if (doc) { game = doc.game; }
-                //#endregion
+//#endregion
 
+//#region non-game-specific commands
+                //For TWO+ PLAYER games only!!!
                 if (command == 'accept') {
                     //Handle the messages
                     if (message.reference == null) { return message.reply("Please reply to a valid battle request message!"); }
@@ -171,24 +260,72 @@ module.exports ={
                     let msg = await message.channel.messages.fetch(mid);
 
                     //Check if the person actually challenged you
+                    //Get the length of any user tag
                     let mentioned = msg.mentions.users.keys();
-                    const other_discord = mentioned.next().value;
 
-                    if (!acceptIsValid(other_discord, message, msg)) { return; }
+                    let tag_len = String(mentioned.next().value).length;
+
+                    //<@tage_len>, <@  --2+tag_len+2+3 = 7+tag_len
+                    let other_tag = msg.content.substr(7+tag_len, tag_len);
+                    
+                    const other_discord = msg.mentions.users.get(other_tag);
+
+                    //Should also check if the player is already playing a game!!!
+                    if (!acceptIsValid(bot, other_discord, message, msg, tag_len)) { return; }
 
                     //Get the opponent
-                    const other = db.collection(other_discord);
+                    const other = db.collection(other_discord.id);
                     let startPos = msg.content.indexOf('"') + 1;
                     let newCommand = msg.content.substr(startPos, msg.content.lastIndexOf('"') - startPos);
 
+
+                    //#region BOT SECTION
+
+                    //Store both IDs in the database (for turns)
+                    let name_first = await bot.users.cache.get(id);
+                    let name_second = await bot.users.cache.get(other_discord.id);
+
+                    // message.reply(`${first} [${name_first}], ${second} [${name_second}]`); throw 'ERR';
+                    const threadname = `${name_first.username} VS ${name_second.username} [${newCommand.toUpperCase()}]`;
+                    var newObj = {0: id, 1: other_discord.id, turn: 0, thread: threadname};
+                    serverinbotdb.insertOne(newObj);
+
+                    //#endregion
+
+
                     if (newCommand == 'battle') {
-                        Initialize(dbo, newCommand, msg, other);
-                        battle.handle(dbo, other, bot, message, args, 'initiate', Discord, mongouri, items, xp_collection);
+                        const result = Initialize(bot, dbo, newCommand, msg, id, other_discord.id, other);
+                        result.then(function (thread) {
+                            battle.handle(dbo, other, bot, thread, 'initalize', mongouri, items);
+                        });
                     }
-                } else {
-                    if (command == 'quit') {
-                        winGame(db, dbo, xp_collection);
-                    } else if (game == 'battle' || command == 'battle') {
+                } else if (command == 'quit') {
+
+                    const channel = bot.channels.cache.get(message.channel.parentId);
+                    //Remove the turn counter from the bot's database
+                    serverinbotdb.deleteOne({0: id} || {1: id});
+                    if (doc.opponent != null) {
+                        // let other = message.guild.members.cache.get(doc.opponent);
+                        let other = db.collection(doc.opponent);
+                        channel.send(`<@${message.author.id}> has quit a game of "${game}" with <@${doc.opponent}>!`);
+                        winGame(client, bot, db, other, xp_collection, message);
+                    } else {
+                        loseGame(dbo, xp_collection, message, bot);
+                        channel.send(`<@${message.author.id}> has quit a game of "${game}"!`);
+                    }
+
+                    message.channel.delete();
+                }
+                else if (command == 'status') {
+                    getGame(message, args, db);
+                } else if (command == 'hp' || command == 'mp') {
+                    hpmp(message, command, dbo);
+                }
+//#endregion
+
+//#region game-specific commands
+                else {
+                    if (game == 'battle' || command == 'battle') {
                         //Handle sending the request and making sure the user exists here
                         let other_discord = message.mentions.users.first();
                         if (other_discord == undefined) {
@@ -204,10 +341,11 @@ module.exports ={
                         else { message.reply(`'!game ${command}' is not a command!`); }
                     }
                 }
+//#endregion
 
             });
         });
 
         client.close();
-    }, allGames
+    }, allGames, in_game_redirector
 }

@@ -2,6 +2,7 @@ const { Client, Intents, Permissions } = require('discord.js');
 const Discord = require('discord.js');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const fs = require('fs');
+const turnManager  = require('./commands/turnManager.js');
 const { exit } = require('process');
 const BASE_LVL_XP = 20;
 
@@ -52,9 +53,9 @@ const { connect } = require('mongoose');
 bot.on("guildCreate", guild => {
     guild.members.fetch
     guild.roles.create({ name: 'Selmer Bot Mod' });
-    
+
     const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
-    let owner = guild.members.fetch(guild.ownerID);
+    let owner = guild.members.cache.fetch(guild.ownerID);
     owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the <@&' + role + '> role.');
 
 });
@@ -83,6 +84,7 @@ fs.readdirSync('./commands')
 
   //Set these two manually because all the seperate games can't be included in the command list (all managed by the 'game' file)
   let temp_command = require("./commands/db/econ.js");
+const { STATE } = require('./commands/db/econ.js');
   bot.commands.set('econ', temp_command);
   temp_command = require('./commands/db/game.js');
   bot.commands.set('game', temp_command);
@@ -133,9 +135,40 @@ bot.on('ready', async () => {
 
 
 //Button Section
-bot.on('interactionCreate', interaction => {
+bot.on('interactionCreate', async interaction => {
 	if (!interaction.isButton()) return;
-	console.log(interaction);
+
+    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+    client.connect(err => {
+        let current_user = turnManager.getTurn(client, bot, interaction);
+        
+        current_user.then(function (result) {
+            const id = result[0];
+            const doc = result[1];
+            const threadname = doc.thread;
+            const dbo = client.db(interaction.guildId + '[ECON]').collection(id);
+            dbo.find({ 'state': {$exists: true} }).toArray(async function (err, docs) {
+                if (interaction.user.id == id) {
+                    await interaction.deferReply();
+
+                    //Check State
+                    if (docs[0].state == STATE.FIGHTING) {
+                        //Do turn stuff
+                        bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items);
+                    }
+    
+                    turnManager.changeTurn(client, bot, interaction);
+    
+                    //remove the old interation message
+                    interaction.message.delete();
+                    
+                    interaction.editReply(`<@${interaction.user.id}> used _${interaction.customId.toLowerCase()}_!`);
+                } else {
+                    console.log("It's not your turn!");
+                }
+            });
+        });
+    });
 });
 
 
@@ -156,7 +189,7 @@ bot.on('messageCreate', (message) => {
     else if(bot.commands.has(command) && command != 'ECON') {
         //Database access is required, change the inputs
         if (command == 'game' || command == 'accept') {
-            bot.commands.get(command).execute(bot, message, args, command, Discord, mongouri, items, xp_collection)
+            bot.commands.get(command).execute(bot, message, args, command, Discord, mongouri, items, xp_collection);
         } else {
             bot.commands.get(command).execute(message, args, Discord, Client, bot);
         }

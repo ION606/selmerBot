@@ -14,7 +14,8 @@ const BASE = {
 const STATE = {
     IDLE: 0,
     FIGHTING: 1,
-    PRONE: 2
+    PRONE: 2,
+    WAITING: 3
 }
 //Note that leveling up to the next level takes 10% more xp than the previous one
 

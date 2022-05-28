@@ -1,37 +1,75 @@
 //@ts-check
+const { STATE } = require('./econ');
+
+/**
+ * Called by "attack"
+ */
+function attack_special() {
+
+}
 
 
-function hpmp(message, command, dbo) {
-    if (command == 'hp') {
-        dbo.find({"hp": {$exists: true}}).toArray(function(err, doc) {
-            return message.reply(`You have ${String(doc[0].hp)} hp left!`);
-        });
-    } else if (command == 'mp') { 
-        dbo.find({"mp": {$exists: true}}).toArray(function(err, doc) {
-            return message.reply(`You have ${String(doc[0].hp)} mp left!`);
-        });
-    }
+function attack(user_dbo, other_dbo, bot, thread, command, mongouri, items) {
+    
+    postActionBar(thread, other_dbo);
+}
+
+
+/**
+ * Called by "item"
+ */
+function heal(user_dbo, bot, thread, command, mongouri, items) {
+    postActionBar(thread, user_dbo);
+}
+
+
+//Gets items by section/name, reacts with them to the message, when pressed, trigger a response
+function item() {
+    throw 'THE "ITEM" COMMAND HAS NOT BEEN SET UP YET!';
+}
+
+
+function cast() {
+
+}
+
+
+function postActionBar(thread, user_dbo) {
+    const { MessageActionRow, MessageButton } = require('discord.js');
+    const row = new MessageActionRow()
+        .addComponents(
+            new MessageButton()
+                .setCustomId('ATTACK')
+                .setLabel('ATTACK')
+                .setStyle('DANGER'),
+            new MessageButton()
+                .setCustomId('HEAL')
+                .setLabel('HEAL')
+                .setStyle('SUCCESS'),
+            new MessageButton()
+                .setCustomId('ITEMS')
+                .setLabel('ITEMS')
+                .setStyle('SECONDARY')
+        );
+
+    thread.send({ content: `Your turn <@${user_dbo.s.namespace.collection}>!`, components: [row] });
 }
 
 
 
+function handle(user_dbo, other_dbo, bot, thread, command, mongouri, items) {
 
-//#region Exports
-function verifyAndInitiate() {
-
-}
-
-function handle(user_dbo, other_dbo, bot, message, args, command, Discord, mongouri, items, xp_collection) {
-    if (command == 'hp' || command == 'mp') {
-        hpmp(message, command, user_dbo);
-    } else if (command == 'initiate') {
-        
+    if (command == 'initalize') {
+        postActionBar(thread, user_dbo);
+    } else if (command == 'attack') {
+        attack(user_dbo, other_dbo, bot, thread, command, mongouri, items);
+    } else if (command == 'items') {
+        item();
+    } else if (command == 'heal') {
+        heal();
     }
     // initiate(user_dbo, other_dbo, command, message);
 }
-
-
-//#endregion
 
 
 module.exports = { handle }

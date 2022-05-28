@@ -4,3 +4,4 @@ config.json
 .sqlite
 database.sqlite
 temp.js
+INTERACTION.txt
