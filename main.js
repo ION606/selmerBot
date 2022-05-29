@@ -147,6 +147,7 @@ bot.on('interactionCreate', async interaction => {
             const doc = result[1];
             const threadname = doc.thread;
             const dbo = client.db(interaction.guildId + '[ECON]').collection(id);
+            
             dbo.find({ 'state': {$exists: true} }).toArray(async function (err, docs) {
                 if (interaction.user.id == id) {
                     await interaction.deferReply();
@@ -154,7 +155,7 @@ bot.on('interactionCreate', async interaction => {
                     //Check State
                     if (docs[0].state == STATE.FIGHTING) {
                         //Do turn stuff
-                        bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items);
+                        bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection);
                     }
     
                     turnManager.changeTurn(client, bot, interaction);

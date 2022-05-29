@@ -14,8 +14,9 @@ const BASE = {
 const STATE = {
     IDLE: 0,
     FIGHTING: 1,
-    PRONE: 2,
-    WAITING: 3
+    DEFENDING: 2,
+    PRONE: 3,
+    WAITING: 4 //For items ONLY
 }
 //Note that leveling up to the next level takes 10% more xp than the previous one
 
@@ -37,7 +38,8 @@ function CreateNewCollection(message, client, server, id, opponent = null, game 
             if (err) { return console.log(err); }
             if (!collinfo) {
                 message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
-                dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hp: BASE.HP, mp: BASE.MP, game: game, opponent: opponent, state: STATE.IDLE});
+                let hp_mp = {maxhp: BASE.HP, hp: BASE.HP, maxmp: BASE.MP, mp: BASE.MP}
+                dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hpmp: hp_mp, game: game, opponent: opponent, state: STATE.IDLE, equipped: { weapons: {main: null, secondary: null}, items: {}}});
             }
         });
     });
@@ -65,9 +67,21 @@ function addxp(message, dbo, amt, xp_list) {
                     needed = xp_list.get(rank);
                 }
                 rank --; //Maybe?
-                dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { rank: rank }});
+
+                let newhp;
+                if (newhp < 200) {
+                    newhp = BASE.HP * rank;
+                } else {
+                    newhp = temp.hpmp.hp + 50;
+                }
+
+                let newmp = temp.mp + 5;
+                
+                dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { rank: rank, hpmp: {maxhp: newhp, maxmp: newmp} }});
                 message.channel.send('Congradulations <@' + message.author.id + '> for reaching rank ' + String(rank) + '!');
             }
+        } else {
+            message.reply("You've already reached max level!");
         }
 
         dbo.updateOne({balance: temp.balance}, { $set: { xp: txp}});

@@ -2,10 +2,12 @@
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 let ecoimport = require("./econ.js");
-let battle = require("./battle.js");
+let { handle } = require("./battle.js"); //PROBLEM (CIRCULAR DEPENDANCY)
 let snowflake = require("./addons/snowflake.js");
 const STATE = ecoimport.STATE;
 const BASE = ecoimport.BASE;
+
+const { winGame, loseGame } = require('./external_game_functions.js');
 
 //Has a list of all games (used to change player state)
 const allGames = ['battle'];
@@ -53,59 +55,6 @@ async function Initialize(bot, user_dbo, command, message, first, second, other_
         message.channel.send(`<@${first}> and <@${second}> have started a game of ***${command.toUpperCase()}!***`);
 
         resolve(thread);
-    });
-}
-
-
-//#region game lose/win
-function loseGame(user_dbo, xp_collection, message, bot = null) {
-    return new Promise(function(resolve, reject) {
-    user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
-        const doc = docs[0];
-        if (doc == undefined) { return message.reply("Oops! There's been an error! Please contact support if this problem persists!"); }
-        if (doc.game == null) { return message.reply("You're not even in a game and you're trying to quit! Sad..."); }
-
-        //If this function was not called from "winGame", return
-        if (doc.opponent) {
-            //If remove some money (looting) [maybe implement a "friendly" game setting later with no looting]
-            var addbal = doc.rank * 2;
-            if (doc.balance - addbal < 5) { addbal = addbal - doc.balance; }
-            if (doc.balance > 5) {
-                user_dbo.updateOne(doc, { $set: { balance: doc.balance - addbal}});
-            }
-        }
-
-        //Update the player's xp
-        ecoimport.addxp(message, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection)
-        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE }});
-
-        resolve(addbal);
-    });
-});
-}
-
-
-function winGame(client, bot, db, user_dbo, xp_collection, message) {
-    user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
-        const doc = docs[0];
-        
-        //Check for an opponent
-        if (doc.opponent != null) {
-            let other = db.collection(doc.opponent);
-            let promise_temp = loseGame(other, xp_collection, message);
-            
-            promise_temp.then(function(result) {
-                var amt_taken = result;
-                user_dbo.updateOne({'balance': {$exists: true}}, { $set: { balance: doc.balance + amt_taken}});
-            });
-        }
-
-        //Delete the bot's record of the game
-        client.db('B|S' + bot.user.id).collection(user_dbo.s.namespace.db.substr(0, user_dbo.s.namespace.db.length - 6)).drop();
-        
-
-        //Update the player with xp
-        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank) }});
     });
 }
 
@@ -168,6 +117,7 @@ function acceptIsValid(bot, other_discord, message, msg, tag_len) {
 
 
 function hpmp(message, command, dbo) {
+    throw 'THIS HAS NOT BEEN UPDATED WITH THE MOST RECENT VERSION OF THE MONGODB STRUCTURE!';
     if (command == 'hp') {
         dbo.find({"hp": {$exists: true}}).toArray(function(err, doc) {
             return message.reply(`You have ${String(doc[0].hp)} hp left!`);
@@ -183,7 +133,7 @@ function hpmp(message, command, dbo) {
 
 
 //#region GAME SPECIFIC
-function in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items) {
+function in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection) {
 
     //Maybe fix this later......
     let turn = doc.turn;
@@ -197,7 +147,7 @@ function in_game_redirector(bot, interaction, threadname, doc, client, mongouri,
     dbo.find({'game': {$exists: true}}).toArray(function (err, docs) {
         const game = docs[0].game
         switch (game) {
-            case 'battle': battle.handle(dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items);
+            case 'battle': handle(client, dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items, interaction, xp_collection);
         }
     });
 }
@@ -296,7 +246,7 @@ module.exports ={
                     if (newCommand == 'battle') {
                         const result = Initialize(bot, dbo, newCommand, msg, id, other_discord.id, other);
                         result.then(function (thread) {
-                            battle.handle(dbo, other, bot, thread, 'initalize', mongouri, items);
+                            handle(client, dbo, other, bot, thread, 'initalize', mongouri, items, null, xp_collection);
                         });
                     }
                 } else if (command == 'quit') {
@@ -313,8 +263,6 @@ module.exports ={
                         loseGame(dbo, xp_collection, message, bot);
                         channel.send(`<@${message.author.id}> has quit a game of "${game}"!`);
                     }
-
-                    message.channel.delete();
                 }
                 else if (command == 'status') {
                     getGame(message, args, db);
