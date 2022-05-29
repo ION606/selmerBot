@@ -262,9 +262,8 @@ function getShop(message, args, items, bot) {
         noinp = true;
     }
 
-    const items2 = items.slice((ind - 1)*10, (ind - 1)*10+10);
-    newText = Formatters.codeBlock(items2.map(i => `${i.icon} (${i.name}): \$${i.cost}`)
-    .filter(f => f.sect = args[0]).join('\n'));
+    const items2 = items.filter(function(f) { return (f.sect.toLowerCase() == args[0].toLowerCase()) }).slice((ind - 1)*10, (ind - 1)*10+10);
+    newText = Formatters.codeBlock(items2.map(i => `${i.icon} (${i.name}): \$${i.cost}`).join('\n'));
 
     if (noinp) {
         newText += `(Use ${bot.prefix}shop [type] [page number] to access other pages)`;

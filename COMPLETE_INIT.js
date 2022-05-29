@@ -138,8 +138,7 @@ client.connect(err => {
     ]);
 });
 
-client.close();
-
-const END = d.getTime();
-
-console.log(`Total time in SECONDS: ${(((END - START) % 60000) / 1000).toFixed(0)} ms!`);
+client.close().then(function() {
+    const END = d.getTime();
+    console.log(`Total time in SECONDS: ${(((END - START) % 60000) / 1000).toFixed(0)} ms!`);
+});

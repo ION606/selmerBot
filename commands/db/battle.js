@@ -45,7 +45,7 @@ function attack(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
             if (new_hp <= 0) {
                 winGame(client, bot, client.db(user_dbo.s.namespace.db), user_dbo, xp_collection, interaction.message);
             } else {
-                other_dbo.updateOne({'equipped': {$exists: true}}, { $set: { hp :new_hp }}); //THIS DOES NOT WORK
+                other_dbo.updateOne({'equipped': {$exists: true}}, { $set: { hp :new_hp }}); //THIS DOES NOT WORK (OVERWRITES HPMP MAP WITH ONE VALUE)
             }
         });
 
