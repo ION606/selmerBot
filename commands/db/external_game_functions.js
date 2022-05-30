@@ -22,7 +22,7 @@ function loseGame(user_dbo, xp_collection, message, bot = null) {
 
         //Update the player's xp
         addxp(message, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection)
-        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, hp: doc.hpmp.maxhp, mp: doc.hpmp.maxmp }});
+        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
         resolve(addbal);
     });
@@ -51,7 +51,7 @@ function winGame(client, bot, db, user_dbo, xp_collection, message) {
         
 
         //Update the player with xp
-        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank), hp: doc.hpmp.maxhp, mp: doc.hpmp.maxmp }});
+        user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank), 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
         message.channel.delete();
     });
