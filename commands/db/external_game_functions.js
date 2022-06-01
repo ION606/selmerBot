@@ -1,5 +1,6 @@
 //@ts-check
 const { addxp, STATE, BASE } = require("./econ.js");
+const turnManger = require('../turnManager.js');
 
 
 //#region game lose/win

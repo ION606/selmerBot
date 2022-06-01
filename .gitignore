@@ -1,7 +1,8 @@
 node_modules
 config.json
-.env
-.sqlite
+*.env
+*.sqlite
+*.txt
+!spec/LevelsXP.txt
 database.sqlite
 temp.js
-INTERACTION.txt

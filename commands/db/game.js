@@ -119,14 +119,20 @@ function acceptIsValid(bot, other_discord, message, msg, tag_len) {
 function hpmp(message, command, dbo) {
     // throw 'THIS HAS NOT BEEN UPDATED WITH THE MOST RECENT VERSION OF THE MONGODB STRUCTURE!';
     if (command == 'hp') {
-        dbo.find({"hp": {$exists: true}}).toArray(function(err, doc) {
+        dbo.find({"hpmp": {$exists: true}}).toArray(function(err, doc) {
             return message.reply(`You have ${String(doc[0].hpmp.hp)} hp left!`);
         });
     } else if (command == 'mp') { 
-        dbo.find({"mp": {$exists: true}}).toArray(function(err, doc) {
+        dbo.find({"hpmp": {$exists: true}}).toArray(function(err, doc) {
             return message.reply(`You have ${String(doc[0].hpmp.hp)} mp left!`);
         });
     }
+}
+
+
+function equip(client, message, command, dbo, bot) {
+    //Check if the user is already in a game
+    
 }
 
 //#endregion

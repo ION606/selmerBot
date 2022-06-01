@@ -147,7 +147,7 @@ bot.on('interactionCreate', async interaction => {
             const doc = result[1];
             const threadname = doc.thread;
             const dbo = client.db(interaction.guildId + '[ECON]').collection(id);
-            
+
             dbo.find({ 'state': {$exists: true} }).toArray(async function (err, docs) {
                 if (interaction.user.id == id) {
                     await interaction.deferReply();
@@ -158,10 +158,8 @@ bot.on('interactionCreate', async interaction => {
                         bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection);
                     }
     
-                    turnManager.changeTurn(client, bot, interaction);
-    
                     //remove the old interation message
-                    interaction.message.delete();
+                    // interaction.message.delete();
                     
                     interaction.editReply(`<@${interaction.user.id}> used _${interaction.customId.toLowerCase()}_!`);
                 } else {

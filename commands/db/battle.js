@@ -1,6 +1,8 @@
 //@ts-check
+const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const { STATE } = require('./econ');
 const { winGame } = require('./external_game_functions.js');
+const { changeTurn } = require('../turnManager.js');
 
 
 /**
@@ -17,7 +19,6 @@ function attack(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
     user_dbo.find({'equipped': {$exists: true}}).toArray(function(err, docs) {
         const doc = docs[0];
         const all_weapons = doc.equipped.weapons;
-        console.log(all_weapons);
         const weapon = all_weapons.main;
 
         var dmg = 0;
@@ -45,7 +46,7 @@ function attack(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
             if (new_hp <= 0) {
                 winGame(client, bot, client.db(user_dbo.s.namespace.db), user_dbo, xp_collection, interaction.message);
             } else {
-                other_dbo.updateOne({'equipped': {$exists: true}}, { $set: { 'hpmp.hp' :new_hp }}); //THIS DOES NOT WORK (OVERWRITES HPMP MAP WITH ONE VALUE)
+                other_dbo.updateOne({'equipped': {$exists: true}}, { $set: { 'hpmp.hp' :new_hp }});
             }
         });
 
@@ -54,16 +55,46 @@ function attack(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
     //Check for a "special" animation
     
 
-    
+    //Change turns
+    changeTurn(client, bot, interaction);
 }
 
 
 /**
  * Called by "item"
  */
-function heal(user_dbo, bot, thread, command, mongouri, items) {
+async function heal(interaction, user_dbo, bot, thread, command, mongouri, items) {
+    if (interaction.message.content.toLowerCase().indexOf('Which item would you like to use?') != -1) {
+        // The person picked out an item
+    }
+    //Get the 'healing' items (stored in "{item}: num" format)
+    user_dbo.find({'equipped': {$exists: true}}).toArray(async function(err, docs) {
+        const doc = docs[0];
+        const rawitems = doc.equipped.items;
+        if  (JSON.stringify(rawitems) == '{}') { return thread.send("You don't have any items!"); }
+        const items = rawitems.filter(function(f) { return (f.sect.toLowerCase() == 'healing') });
+        //Find something to heal with
+        const row = new MessageActionRow()
+        .addComponents(
+            new MessageSelectMenu()
+                .setCustomId(`${interaction.user.id}|heal`)
+                .setPlaceholder('Nothing selected')
+                .addOptions([
+                    {
+                        label: 'Select me',
+                        description: 'This is a description',
+                        value: 'first_option',
+                    },
+                    {
+                        label: 'You can select me too',
+                        description: 'This is also a description',
+                        value: 'second_option',
+                    },
+                ]),
+        );
 
-
+        await interaction.reply({ content: 'Pong!', components: [row] });
+    });
 }
 
 
@@ -88,7 +119,6 @@ function cast() {
 
 
 function postActionBar(thread, user_dbo) {
-    const { MessageActionRow, MessageButton } = require('discord.js');
     const row = new MessageActionRow()
         .addComponents(
             new MessageButton()
@@ -119,14 +149,13 @@ function handle(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
         return postActionBar(thread, user_dbo);
     } else if (command == 'attack') {
         attack(client, user_dbo, other_dbo, bot, thread, command, mongouri, items, xp_collection, interaction);
+        postActionBar(thread, other_dbo);
     } else if (command == 'items') {
         item();
     } else if (command == 'heal') {
-        heal();
+        heal(interaction, user_dbo, bot, thread, command, mongouri, items);
     }
 
-    //Post the action bar for the next person's turn
-    postActionBar(thread, other_dbo);
     // initiate(user_dbo, other_dbo, command, message);
 }
 
