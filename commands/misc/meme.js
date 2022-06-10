@@ -16,6 +16,24 @@ module.exports = {
             .setImage(meme.image);
             
             message.channel.send({ embeds: [newEmbed] });
-        })
+        }).catch(async err => {
+            console.log(err);
+            //Try a different way
+            const fetch = require('node-fetch');
+            const response = await fetch('https://some-random-api.ml/meme');
+            const data = await response.json().catch(err => {
+                console.log(err);
+                return message.reply("_Uh oh, something's gone wrong!_");
+            });
+
+            const newEmbed = new Discord.MessageEmbed()
+            .setColor(randomHexColor())
+            .setTitle(data.caption)
+            // .setURL(data.image)
+            .setDescription(`category: ${data.category}`)
+            .setImage(data.image);
+            
+            message.channel.send({ embeds: [newEmbed] });
+        });
     }
 }

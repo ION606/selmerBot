@@ -116,7 +116,10 @@ function convertCurrency(id, amt, dbo) {
 function checkAndUpdateBal(dbo, item, message, args) {
     let b = false;
     dbo.find({"balance": {$exists: true}}).toArray(b = function(err, doc) {
-        if (!String(doc)) { return message.reply("Your account doesn't exist, please contact the mods for support"); }
+        if (!String(doc)) {
+            message.reply("Your account doesn't exist, please contact the mods for support");
+            return false;
+        }
 
         const icost = args[0] * item.cost;
         if (doc[0].balance < icost) {
