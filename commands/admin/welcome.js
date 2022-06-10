@@ -12,7 +12,7 @@ async function welcome(member, welcomechannel, welcomebanner = null) {
     //Draw Stuff
     const context = canvas.getContext('2d');
 
-	const backgroundFile = await readFile('./commands\\admin\\wallpaper.jpg');
+	const backgroundFile = await readFile('https://github.com/ION606/selmerBot/blob/main/commands/admin/wallpaper.jpg');
 	const background = new CanvasImport.Image();
 	background.src = backgroundFile;
 
@@ -68,7 +68,7 @@ async function welcome(member, welcomechannel, welcomebanner = null) {
     context.drawImage(avatar, (canvas.width/2) - 80, 10, 160, 160);
 
 	// Use the helpful Attachment class structure to process the file for you
-	const attachment = new MessageAttachment(canvas.toBuffer('https://github.com/ION606/selmerBot/blob/main/commands/admin/wallpaper.jpg'), 'profile-image.png');
+	const attachment = new MessageAttachment(canvas.toBuffer('image/png'), 'profile-image.png');
 
     welcomechannel.send({ files: [attachment] });
 }
