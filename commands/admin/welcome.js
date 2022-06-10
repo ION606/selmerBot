@@ -54,10 +54,14 @@ async function welcome(member, welcomechannel, welcomemessage = null, welcomeban
 
         //message.author.username == interaction.member.displayName
         //message.guild.name == interaction.member.guild.name
-        let txt = 'Welcome to';
-        if (welcomemessage != null) { txt = welcomemessage}
+        let text = `Welcome to ${member.guild.name} ${member.user.username}#${member.user.discriminator}!`;
+        if(welcomemessage != null) {
+            text = welcomemessage;
+            text = text.replace('{sn}', member.guild.name);
+            text = text.replace('{un}', member.user.username);
+            text = text.replace('{ut}', member.user.discriminator);
+        }
         
-        const text = `${txt} ${member.guild.name} ${member.user.username}#${member.user.discriminator}!`;
         context.font = applyText(canvas, text);
         context.fillStyle = '#ffffff';
         context.fillText(text, (canvas.width/2) - (text.length * 7.5), canvas.height - 15);

@@ -36,17 +36,21 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
 
         //Chose the appropriate command
         command = args[0];
-        if (args[1] == undefined) {
-            return message.reply("Please specify what the new value is!");
-        }
 
         if (command == 'welcome_channel') {
-            if (args.length != 2) { return message.reply('The command format is _!setup welcomechannel <channel name>_'); }
+            if (args.length != 2) { return message.reply('The command format is _!setup welcome_channel <channel name>_'); }
             // setWelcomeChannel(dbo, message, args[1]);
             const channel = message.guild.channels.cache.find(ch => ch.name === args[1]);
             dbo.updateOne({welcomechannel: {$exists: true}}, {$set: {welcomechannel: `${channel.id}`}});
         } else if (command == 'welcome_message') {
-            dbo.updateOne({welcomemessage: {$exists: true}}, {$set: {welcomemessage: args[1]}})
+            if (args.length < 2) { return message.reply('The command format is _!setup welcome\\_message_\nUse _{sn}_ to insert the server name, _{un}_ to insert the user name, and _{ut}_ to insert the user tag\nExample: _!setup welcome\\_message Welcome to {sn} Sir {un}#{ut}_'); }
+            let msg = "";
+            for (let i = 1; i < args.length; i ++ ) {
+                msg += args[i] + ' ';
+            }
+
+            if (msg.length > 30) { return message.reply('Please specify a welcome message under 30 characters!'); }
+            dbo.updateOne({welcomemessage: {$exists: true}}, {$set: {welcomemessage: msg}})
         }
     });
 
