@@ -69,7 +69,7 @@ bot.on("guildCreate", guild => {
         if (err) { return console.log(err); }
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomebanner': null}]);
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}]);
     });
 
     client.close();
@@ -221,7 +221,7 @@ bot.on('guildMemberAdd', async (member) => {
                 return console.log('No welcome channel detected');
             }
 
-            await welcome(member, welcomechannel, docs[0].welcomebanner);
+            await welcome(member, welcomechannel, docs[0].welcomemessage);
         })
     }) 
 });

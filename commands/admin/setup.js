@@ -36,11 +36,17 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
 
         //Chose the appropriate command
         command = args[0];
-        if (command == 'welcomechannel') {
+        if (args[1] == undefined) {
+            return message.reply("Please specify what the new value is!");
+        }
+
+        if (command == 'welcome_channel') {
             if (args.length != 2) { return message.reply('The command format is _!setup welcomechannel <channel name>_'); }
             // setWelcomeChannel(dbo, message, args[1]);
             const channel = message.guild.channels.cache.find(ch => ch.name === args[1]);
             dbo.updateOne({welcomechannel: {$exists: true}}, {$set: {welcomechannel: `${channel.id}`}});
+        } else if (command == 'welcome_message') {
+            dbo.updateOne({welcomemessage: {$exists: true}}, {$set: {welcomemessage: args[1]}})
         }
     });
 
