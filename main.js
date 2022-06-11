@@ -290,7 +290,7 @@ bot.on('guildMemberAdd', async (member) => {
 bot.on('messageCreate', (message) => {
 
     //Special case, testing server (still need the emojis)
-    if (!bot.inDebugMode && message.server.id == bot.home_server) { return; }
+    if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
 
     //COMMAND AREA
     //Check if the prefix exists
