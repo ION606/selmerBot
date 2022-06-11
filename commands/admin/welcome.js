@@ -41,11 +41,14 @@ async function welcome(member, welcomechannel, welcomemessage = null, welcomeban
         
             // Declare a base size of the font
             let fontSize = 70;
+            let i = 0;
         
             do {
                 // Assign the font to the context and decrement it so it can be measured again
                 context.font = `italic ${fontSize -= 10}px sans-serif`;
                 // Compare pixel width of the text to the canvas minus the approximate avatar size
+
+                i ++;
             } while (context.measureText(text).width > canvas.width - 100);
         
             // Return the result to use in the actual canvas
@@ -62,9 +65,9 @@ async function welcome(member, welcomechannel, welcomemessage = null, welcomeban
             text = text.replace('{ut}', member.user.discriminator);
         }
         
-        context.font = applyText(canvas, text);
+        context.font= applyText(canvas, text);
         context.fillStyle = '#ffffff';
-        context.fillText(text, (canvas.width/2) - (text.length * 7.5), canvas.height - 15);
+        context.fillText(text, (canvas.width/2) - (context.measureText(text).width)/2, canvas.height - 15);
 
 
         //Draw a white circle

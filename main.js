@@ -12,11 +12,14 @@ const BASE_LVL_XP = 20;
 //Adding integration for development mode
 let token;
 let IDM = false;
+let home_server;
 if (process.env.token != undefined) {
     //Use "setx NAME VALUE" in the local powershell terminal to set
     token = process.env.token;
+    home_server = process.env.home_server;
 } else {
     token = require('./config.json').token;
+    home_server = require('./config.json').home_server;
     IDM = true;
 }
 
@@ -40,6 +43,7 @@ const prefix = '!';
 bot.prefix = new String;
 bot.prefix = prefix;
 bot.inDebugMode = IDM;
+bot.home_server = home_server;
 
 
 //MongoDB integration
@@ -152,6 +156,7 @@ bot.on('ready', async () => {
 
 //Button Section
 bot.on('interactionCreate', async interaction => {
+
 	if (interaction.isButton()) {
         const battlecommandlist = ['ATTACK', 'HEAL', 'DEFEND', 'ITEMS'];
 
@@ -178,21 +183,76 @@ bot.on('interactionCreate', async interaction => {
                             }
 
                             //remove the old interation message
-                            interaction.message.delete();
+                            await interaction.message.delete();
                             
-                            interaction.editReply(`<@${interaction.user.id}> used _${interaction.customId.toLowerCase()}_!`);
+                            if (interaction.customId.toLowerCase() != 'heal') {
+                                interaction.editReply(`<@${interaction.user.id}> used _${interaction.customId.toLowerCase()}_!`);
+                            }
                         } else {
                             console.log("It's not your turn!");
                         }
                     });
                 });
-            } //else ifs here
+            }//else ifs here
         });
 
         client.close();
     }
-    else if (interaction.isCommand()) {
+    else if (interaction.isSelectMenu()) {
+        if (interaction.customId.toLowerCase().indexOf('|heal') != -1) {
+            const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+            client.connect(err => {
+                const id = interaction.customId.substring(0, interaction.customId.indexOf('|'))
+                
+                if (id != interaction.user.id) { return; }
 
+                let current_user = turnManager.getTurn(client, bot, interaction);
+                current_user.then(function(result) {
+                    const doc = result[1];
+                    const threadname = doc.thread;
+                    const dbo = client.db(interaction.guildId + '[ECON]').collection(id);
+
+                    dbo.find({ 'state': {$exists: true} }).toArray(async function (err, docs) {
+                        if (interaction.user.id == id) {
+                            await interaction.deferReply();
+
+                            //Check State
+                            if (docs[0].state == STATE.FIGHTING) {
+                                interaction.customId = 'usepotion';
+                                //Do turn stuff
+                                bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection);
+                            }
+                            
+                            /*
+                            let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
+                            let sname;
+
+                            if (interaction.customId.toLowerCase() == 'heal' || interaction.customId.toLowerCase() == 'mp') {
+                                if (interaction.values[0] == 'HP Potion') { sname = 'healing_potion' }
+                                else if (interaction.values[0] == 'MP Potion') { sname = 'mana_potion' }
+                                else if (interaction.values[0] == 'Super HP Potion') { sname = 'superior_healing_potion' }
+                                else if (interaction.values[0] == 'Super MP Potion') { sname = 'superior_mana_potion' }
+                            }
+
+                            // emj = srv.find((g) => { return g.name == sname });
+                            // console.log(sname, srv);*/
+
+                            interaction.editReply(`<@${interaction.user.id}> used a _${interaction.values[0]}_!`);
+
+
+                            //remove the old interation message
+                            await interaction.message.delete();
+                            
+                        } else {
+                            console.log("It's not your turn!");
+                        }
+                    });
+                });
+
+                //Get all chars from after "CUSTOM|" to the end of the str
+                // let name = item.icon.substr(7, item.icon.length - 6);
+            });
+        }
     }
 });
 
@@ -229,6 +289,9 @@ bot.on('guildMemberAdd', async (member) => {
 
 bot.on('messageCreate', (message) => {
 
+    //Special case, testing server (still need the emojis)
+    if (!bot.inDebugMode && message.server.id == bot.home_server) { return; }
+
     //COMMAND AREA
     //Check if the prefix exists
     if (!message.content.startsWith(prefix) || message.author.bot) return;
@@ -247,6 +310,15 @@ bot.on('messageCreate', (message) => {
         );
 
         message.channel.send({ components: [row] });
+    }
+
+    //TEMP
+    if (command == 'emj') {
+        let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
+        // console.log(srv);
+        emj = srv.find((g) => { return g.name == 'healing_potion' });
+        // console.log(emj); exit();
+        message.channel.send(`${emj}`);
     }
 
     //Check if the user has sufficient permission

@@ -1,8 +1,33 @@
 //@ts-check
 const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const { STATE } = require('./econ');
-const { winGame } = require('./external_game_functions.js');
+const { winGame, getCustomEmoji } = require('./external_game_functions.js');
 const { changeTurn } = require('../turnManager.js');
+
+
+function postActionBar(thread, user_dbo) {
+    const row = new MessageActionRow()
+        .addComponents(
+            new MessageButton()
+                .setCustomId('ATTACK')
+                .setLabel('ATTACK')
+                .setStyle('DANGER'),
+            new MessageButton()
+                .setCustomId('HEAL')
+                .setLabel('HEAL')
+                .setStyle('SUCCESS'),
+            new MessageButton()
+                .setCustomId('DEFEND')
+                .setLabel('DEFEND')
+                .setStyle('PRIMARY'),
+            new MessageButton()
+                .setCustomId('ITEMS')
+                .setLabel('ITEMS')
+                .setStyle('SECONDARY')
+        );
+
+    thread.send({ content: `Your turn <@${user_dbo.s.namespace.collection}>!`, components: [row] });
+}
 
 
 /**
@@ -63,7 +88,7 @@ function attack(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
 /**
  * Called by "item"
  */
-async function heal(interaction, user_dbo, bot, thread, command, mongouri, items) {
+async function heal(interaction, client, user_dbo, bot, thread, command, mongouri, items) {
     if (interaction.message.content.toLowerCase().indexOf('Which item would you like to use?') != -1) {
         // The person picked out an item
     }
@@ -71,29 +96,47 @@ async function heal(interaction, user_dbo, bot, thread, command, mongouri, items
     user_dbo.find({'equipped': {$exists: true}}).toArray(async function(err, docs) {
         const doc = docs[0];
         const rawitems = doc.equipped.items;
-        if  (JSON.stringify(rawitems) == '{}') { return thread.send("You don't have any items!"); }
-        const items = rawitems.filter(function(f) { return (f.sect.toLowerCase() == 'healing') });
+        const items = rawitems.filter(function(f) { return (f.sect.toLowerCase() == 'hp') });
+
+
+        if  (JSON.stringify(items) == '[]') {
+            postActionBar(thread, user_dbo);
+            return interaction.editReply("You don't have any items!");
+        } else { console.log(JSON.stringify(items))}
+
+        var itemlist = [];
+
+        items.forEach(function(item) {
+            let n = item.name;
+
+            let h = (doc.rank - 1) + Math.round(item.cost/10);
+
+            itemlist.push({label: n, description: `Restores ${h} health (${item.num})`, value: `${n}`});
+        });
+        
+        
         //Find something to heal with
         const row = new MessageActionRow()
         .addComponents(
             new MessageSelectMenu()
                 .setCustomId(`${interaction.user.id}|heal`)
                 .setPlaceholder('Nothing selected')
-                .addOptions([
-                    {
-                        label: 'Select me',
-                        description: 'This is a description',
-                        value: 'first_option',
-                    },
-                    {
-                        label: 'You can select me too',
-                        description: 'This is also a description',
-                        value: 'second_option',
-                    },
-                ]),
+                .addOptions(itemlist),
+                // .addOptions([
+                //     {
+                //         label: 'Select me',
+                //         description: 'This is a description',
+                //         value: 'first_option',
+                //     },
+                //     {
+                //         label: 'You can select me too',
+                //         description: 'This is also a description',
+                //         value: 'second_option',
+                //     },
+                // ])
         );
 
-        await interaction.reply({ content: 'Pong!', components: [row] });
+        await interaction.editReply({ content: 'Please choose a health potion!', components: [row] });
     });
 }
 
@@ -113,38 +156,43 @@ function defend(user_dbo, bot, thread, command, mongouri, items) {
     })
 }
 
+
+function usePotion(interaction, client, user_dbo, bot, thread, command, mongouri) {
+    const name = interaction.values[0];
+    const cursor = user_dbo.find({'equipped.items': {$exists: true}});
+
+    let doc = cursor.next().then((result) => {
+        var allitems = Array.from(result.equipped.items);
+        let items = allitems.filter((it) => { return it.name == name; })[0];
+        let ind = allitems.findIndex((it) => { return it.name == name; })
+
+        //Apply the item's effects
+        if (name.toLowerCase().indexOf('hp') != -1) {
+            let h = (result.rank - 1) + Math.round(items.cost/10);
+            user_dbo.updateOne({"game": {$exists: true}}, { $set: {'hpmp.hp': (result.hpmp.hp + h)}})
+        }
+
+        //Deal with the item itself
+        //If there's more than 1, subtract 1
+        if (items.num > 1) { items.num -= 1; allitems[ind] = items; }
+        else { allitems.splice(ind, 1) }
+        
+        user_dbo.updateOne({'equipped.items': {$exists: true}}, {$set: {'equipped.items': allitems}});
+    })
+
+
+    changeTurn(client, bot, interaction);
+    postActionBar(thread, user_dbo);
+}
+
+
 function cast() {
 
 }
 
 
-function postActionBar(thread, user_dbo) {
-    const row = new MessageActionRow()
-        .addComponents(
-            new MessageButton()
-                .setCustomId('ATTACK')
-                .setLabel('ATTACK')
-                .setStyle('DANGER'),
-            new MessageButton()
-                .setCustomId('HEAL')
-                .setLabel('HEAL')
-                .setStyle('SUCCESS'),
-            new MessageButton()
-                .setCustomId('DEFEND')
-                .setLabel('DEFEND')
-                .setStyle('PRIMARY'),
-            new MessageButton()
-                .setCustomId('ITEMS')
-                .setLabel('ITEMS')
-                .setStyle('SECONDARY')
-        );
 
-    thread.send({ content: `Your turn <@${user_dbo.s.namespace.collection}>!`, components: [row] });
-}
-
-
-
-function handle(client, user_dbo, other_dbo, bot, thread, command, mongouri, items, interaction, xp_collection) {
+async function handle(client, user_dbo, other_dbo, bot, thread, command, mongouri, items, interaction, xp_collection) {
     if (command == 'initalize') {
         return postActionBar(thread, user_dbo);
     } else if (command == 'attack') {
@@ -153,10 +201,12 @@ function handle(client, user_dbo, other_dbo, bot, thread, command, mongouri, ite
     } else if (command == 'items') {
         item();
     } else if (command == 'heal') {
-        heal(interaction, user_dbo, bot, thread, command, mongouri, items);
+        heal(interaction, client, user_dbo, bot, thread, command, mongouri, items); //.then(() => {postActionBar(thread, other_dbo)});
+    } else if (command == 'usepotion') {
+        usePotion(interaction, client, user_dbo, bot, thread, command, mongouri);
     }
 
     // initiate(user_dbo, other_dbo, command, message);
 }
 
-module.exports = { handle }
+module.exports = { handle, postActionBar }

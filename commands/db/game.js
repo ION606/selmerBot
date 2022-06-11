@@ -7,7 +7,7 @@ let snowflake = require("./addons/snowflake.js");
 const STATE = ecoimport.STATE;
 const BASE = ecoimport.BASE;
 
-const { winGame, loseGame } = require('./external_game_functions.js');
+const { winGame, loseGame, equipItem } = require('./external_game_functions.js');
 
 //Has a list of all games (used to change player state)
 const allGames = ['battle'];
@@ -152,6 +152,7 @@ function in_game_redirector(bot, interaction, threadname, doc, client, mongouri,
 
     dbo.find({'game': {$exists: true}}).toArray(function (err, docs) {
         const game = docs[0].game
+        
         switch (game) {
             case 'battle': handle(client, dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items, interaction, xp_collection);
         }
@@ -274,6 +275,8 @@ module.exports ={
                     getGame(message, args, db);
                 } else if (command == 'hp' || command == 'mp') {
                     hpmp(message, command, dbo);
+                } else if (command == 'equip') {
+                    equipItem(client, bot, db, dbo, message);
                 }
 //#endregion
 

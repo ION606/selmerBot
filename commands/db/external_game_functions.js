@@ -59,4 +59,24 @@ function winGame(client, bot, db, user_dbo, xp_collection, message) {
 }
 
 
-module.exports = { winGame, loseGame }
+function equipItem(client, bot, db, dbo, message) {
+    if (!bot.inDebugMode) { return; }
+    let items = [
+        { name: 'HP Potion', cost: 20, icon: 'CUSTOM|healing_potion', sect: 'HP', num: 2 },
+        { name: 'Super HP Potion', cost: 50, icon: 'CUSTOM|super_healing_potion', sect: 'HP', num: 2 },
+        { name: 'MP Potion', cost: 15, icon: 'CUSTOM|mana_potion', sect: 'MP', num: 2 }
+    ]
+    
+    dbo.updateMany({}, {$set: {'equipped.items': items}});
+}
+
+function getCustomEmoji(bot, name) {
+    let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
+        // console.log(srv);
+        let emj = srv.find((g) => { return g.name == name });
+        // message.channel.send(`${emj}`);
+        return `${emj}`;
+}
+
+
+module.exports = { winGame, loseGame, equipItem, getCustomEmoji }

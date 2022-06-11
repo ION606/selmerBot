@@ -134,7 +134,14 @@ client.connect(err => {
         { name: 'Shield', cost: 100, icon: '🛡', sect: 'Weapons' },
         { name: 'Axe', cost: 40, icon: '🪓', sect: 'Weapons' },
         { name: 'Trident', cost: 140, icon: '🔱', sect: 'Weapons' },
-        { name: 'Scissors', cost: 10, icon: '✂️', sect: 'Weapons' }
+        { name: 'Scissors', cost: 10, icon: '✂️', sect: 'Weapons' },
+
+        //Potions (of varying sections)
+        { name: 'HP Potion', cost: 20, icon: 'CUSTOM|healing_potion', sect: 'HP' },
+        { name: 'MP Potion', cost: 15, icon: 'CUSTOM|mana_potion', sect: 'MP' },
+        { name: 'Super HP Potion', cost: 50, icon: 'CUSTOM|superior_healing_potion', sect: 'HP' },
+        { name: 'Super MP Potion', cost: 40, icon: 'CUSTOM|superior_mana_potion', sect: 'MP' }
+        
     ]);
 });
 
