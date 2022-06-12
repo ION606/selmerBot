@@ -18,7 +18,7 @@ module.exports ={
 
         let temp = "***Selmer Bot Commands:***\n";
         
-        bot.commands.sort((a, b) => {a.name[0] < b.name[0]});
+        bot.commands.sort((a, b) => {if (a.name && b.name) { return a.name[0] < b.name[0]} else {return false;} });
 
         bot.commands.forEach((comm) => {            
             if (comm.name != 'verify') {
@@ -27,9 +27,13 @@ module.exports ={
                 }
                 else if (comm.name == 'game') {
                     temp += `game - use _!help game_\n`;
-                }
+                } /* else if (comm.name == 'setup') {
+                    temp += `setup - use _!setup_\n`;
+                }*/
                 else {
-                    temp += `${comm.name.toLowerCase()} - _${comm.description}_\n`;
+                    if (comm.name && comm.description) {
+                        temp += `${comm.name.toLowerCase()} - _${comm.description}_\n`;
+                    }
                 }
             }
         });
