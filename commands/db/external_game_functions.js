@@ -11,10 +11,11 @@ function loseGame(user_dbo, xp_collection, message, bot = null) {
         if (doc == undefined) { return message.reply("Oops! There's been an error! Please contact support if this problem persists!"); }
         if (doc.game == null) { return message.reply("You're not even in a game and you're trying to quit! Sad..."); }
 
+        var addbal;
         //If this function was called from "winGame", return
         if (doc.opponent) {
             //If remove some money (looting) [maybe implement a "friendly" game setting later with no looting]
-            var addbal = doc.rank * 2;
+            addbal = doc.rank * 2;
             if (doc.balance - addbal < 5) { addbal = addbal - doc.balance; }
             if (doc.balance > 5) {
                 user_dbo.updateOne(doc, { $set: { balance: doc.balance - addbal}});
@@ -60,12 +61,17 @@ function winGame(client, bot, db, user_dbo, xp_collection, message) {
 
 
 function equipItem(client, bot, db, dbo, message) {
+    
     if (!bot.inDebugMode) { return; }
     let items = [
         { name: 'HP Potion', cost: 20, icon: 'CUSTOM|healing_potion', sect: 'HP', num: 2 },
         { name: 'Super HP Potion', cost: 50, icon: 'CUSTOM|super_healing_potion', sect: 'HP', num: 2 },
         { name: 'MP Potion', cost: 15, icon: 'CUSTOM|mana_potion', sect: 'MP', num: 2 }
     ]
+    for (let i = 1; i <= 10; i ++) {
+        
+        items.push({ name: `${String.fromCharCode(i + 64)}`, cost: i * 10, icon: 'N/A', sect: 'N/A', num: i })
+    }
     
     dbo.updateMany({}, {$set: {'equipped.items': items}});
 }

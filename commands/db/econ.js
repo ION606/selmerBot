@@ -2,6 +2,9 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 // const { update } = require('apt');
 const { Collection, Client, Formatters, Intents } = require('discord.js');
 const { CLIENT_ODBC } = require('mysql/lib/protocol/constants/client');
+const { time } = require('@discordjs/builders');
+
+let currencySymbol = '$';
 
 //Declair an "enum" to help with BASE calculations
 const BASE = {
@@ -91,7 +94,11 @@ function addxp(message, dbo, amt, xp_list) {
 
 function getBalance(dbo, message) {
     dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) {
-        return message.reply('Your current balance is $' + String(doc[0].balance));
+        let bal = 0;
+        if (doc[0] && doc[0].balance) {
+            bal = doc[0].balance;
+        }
+        return message.reply(`Your current balance is ${currencySymbol}${bal}`);
     });
 }
 
@@ -114,26 +121,25 @@ function convertCurrency(id, amt, dbo) {
 }
 
 function checkAndUpdateBal(dbo, item, message, args) {
-    let b = false;
-    dbo.find({"balance": {$exists: true}}).toArray(b = function(err, doc) {
-        if (!String(doc)) {
-            message.reply("Your account doesn't exist, please contact the mods for support");
-            return false;
-        }
+    return new Promise(function(resolve, reject) {
+        dbo.find({"balance": {$exists: true}}).toArray(b = function(err, doc) {
+            if (!String(doc)) {
+                message.reply("Your account doesn't exist, please contact the mods for support");
+                return false;
+            }
 
-        const icost = args[0] * item.cost;
-        if (doc[0].balance < icost) {
-            message.reply("Insufficient funds!");
-            return false;
-        } else {
-            let temp = doc[0];
-            dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { balance: doc[0].balance -= icost }});
-            message.reply("You have bought " + item.name + " for $" + icost + "!");
-            return true;
-        }
+            const icost = args[0] * item.cost;
+            if (doc[0].balance < icost) {
+                message.reply("Insufficient funds!");
+                resolve(false);
+            } else {
+                let temp = doc[0];
+                dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { balance: doc[0].balance -= icost }});
+                message.reply(`You have bought ${item.name} for ${currencySymbol}${icost}!`);
+                resolve(true);
+            }
+        });
     });
-
-    return b;
 }
 
 
@@ -142,25 +148,29 @@ function buy(id, message, args, dbo, shop, xp_list) {
     if (!isNum(args[0])) { return message.reply("Please enter a number for query 2"); }
 
     let query = args[1];
-    let item = shop.filter(function (item) { return item.name.toLowerCase() == query.toLowerCase(); });
+    let item = shop.filter(function (item) { return item.name.toLowerCase() == query.toLowerCase(); })[0];
 
     if (!String(item)) { return message.reply("This item does not exist!"); }
 
-    let success = Boolean(checkAndUpdateBal(dbo, item[0], message, args));
-    if (!success) { return; }
+    // let success = Boolean(checkAndUpdateBal(dbo, item, message, args));
+    checkAndUpdateBal(dbo, item, message, args).then((success) => {
+        if (!success) { return } //The message is handled in the CheckAndUpdateBal() function
 
-    var newObj = { name: item[0].name, cost: item[0].cost, icon: item[0].icon, sect: item[0].sect};
+        var newObj = { name: item.name, cost: item.cost, icon: item.icon, sect: item.sect};
 
-    addxp(message, dbo, Math.ceil(item[0].cost * 1.2), xp_list);
-    
-    dbo.find(newObj, {$exists: true}).toArray(function(err, doc) {
-        if(String(doc)) {
-            let newnum = doc[0].num + Number(args[0]);
-            dbo.updateOne({ name: item[0].name }, {$set: {num: newnum}});
-        } else {
-            dbo.insertOne({ name: item[0].name, cost: item[0].cost, icon: item[0].icon, sect: item[0].sect, num: Number(args[0])});
-        }
-    });
+        addxp(message, dbo, Math.ceil(item.cost * 1.2), xp_list);
+        
+        dbo.find(newObj, {$exists: true}).toArray(function(err, doc) {
+            if(String(doc)) {
+                let newnum = doc[0].num + Number(args[0]);
+                dbo.updateOne({ name: item.name }, {$set: {num: newnum}});
+            } else {
+                // dbo.insertOne({ name: item.name, cost: item.cost, icon: item.icon, sect: item.sect, num: Number(args[0])}); //Causes "cyclic dependancy"
+                dbo.insertOne(item);
+                dbo.updateOne(item, { $set: {num: Number(args[0]) }});
+            }
+        });
+    })
 };
 
 
@@ -201,7 +211,7 @@ function sell(id, message, args, dbo, shop, xp_list) {
 
             addxp(message, dbo, Math.ceil(functional_item.cost * 1.2), xp_list);
 
-            message.reply(`You've sold ${num} ${String(functional_item.name)} for $${amountSoldFor}`);
+            message.reply(`You've sold ${num} ${String(functional_item.name)} for ${currencySymbol}${amountSoldFor}`);
         } else {
             message.reply("You don't own this item!");
         }
@@ -225,7 +235,7 @@ function work(dbo, message, xp_list) {
             //Update the amount to the new TOTAL balance
             dbo.updateOne({"balance": {$exists: true}}, { $set: { balance: doc[0].balance + amt, lastdayworked: date }});
             addxp(message, dbo, xp_earned, xp_list);
-            message.channel.send('<@' + message.author.id + '> worked and earned $' + amt +' and ' + String(xp_earned) + ' xp!');
+            message.channel.send(`<@${message.author.id}> worked and earned ${currencySymbol}${amt} and ${xp_earned} xp!`);
         }
     });
 }
@@ -235,10 +245,11 @@ function printInventory(dbo, message) {
     let tempstring = "";
     dbo.find().toArray(function(err, docs){
         docs.forEach(val => {
-            if (!val.balance) {
+            if (!val.balance && val.name != undefined) {
                 tempstring += String(val.num) + " " + val.name + " (" + val.icon + ")\n";
             }
         });
+
         if (tempstring == "") { tempstring += "You have nothing in your inventory!"; }
         message.reply(tempstring);
     });
@@ -266,7 +277,7 @@ function getShop(message, args, items, bot) {
     }
 
     const items2 = items.filter(function(f) { return (f.sect.toLowerCase() == args[0].toLowerCase()) }).slice((ind - 1)*10, (ind - 1)*10+10);
-    newText = Formatters.codeBlock(items2.map(i => `${i.icon} (${i.name}): \$${i.cost}`).join('\n'));
+    newText = Formatters.codeBlock(items2.map(i => `${i.icon} (${i.name}): $${i.cost}`).join('\n')); //${currencySymbol} doesn't owrk for some reason
 
     if (noinp) {
         newText += `(Use ${bot.prefix}shop [type] [page number] to access other pages)`;
@@ -304,6 +315,8 @@ module.exports = {
             const db = client.db(String(server) + "[ECON]");
             const dbo = db.collection(id);
             if (err) { return console.log(err); }
+
+            currencySymbol = bot.currencysymbolmmain;
 
             //test area
             if (command == 'xp' || command == 'adbal') {

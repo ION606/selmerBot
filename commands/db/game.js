@@ -1,4 +1,4 @@
-// @ts-check
+// // @ts-check //Disabled
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 let ecoimport = require("./econ.js");
@@ -130,15 +130,52 @@ function hpmp(message, command, dbo) {
 }
 
 
-function equip(client, message, command, dbo, bot) {
+function equip(message, args, command, dbo, bot, shop) {
+    const inp = args[1];
+
     //Check if the user is already in a game
-    
+    dbo.find({'game': {$exists: true}}).toArray(function(err, docs) {
+        const doc = docs[0];
+        
+        if (doc.game != null) {
+            ret = true;
+            console.log(doc.game);
+            return message.reply('You can\'t equip while in a game!');
+        }
+
+        //If the thing is a shield, add it to secondary
+        if (inp.toLowerCase().indexOf('shield') != -1) {
+            dbo.find({def: true}).toArray(function(err, docs) {
+                if (docs[0] != undefined) {
+                    dbo.updateOne({}, {$set: {'equipped.weapons.secondary': docs[0]}});
+                } else {
+                    message.reply("You don't own a shield!");
+                }
+            });
+
+        } else {
+            //Else, equip the weapon(s)
+            
+            dbo.find({name: inp, sect: 'Weapons'}).toArray(function(err, docs) {
+                if (docs[0] != undefined) {
+                    //Equip the weapon
+                    dbo.updateOne({}, {$set: {'equipped.weapons.main': docs[0]}});
+                } else {
+                    message.reply(`You don't own any ${inp}s!`);
+                }
+            });
+        }
+    });
+
 }
 
 //#endregion
 
 
-//#region GAME SPECIFIC
+
+
+//#region Game Handlers
+
 function in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection) {
 
     //Maybe fix this later......
@@ -276,7 +313,8 @@ module.exports ={
                 } else if (command == 'hp' || command == 'mp') {
                     hpmp(message, command, dbo);
                 } else if (command == 'equip') {
-                    equipItem(client, bot, db, dbo, message);
+                    // equipItem(client, bot, db, dbo, message);
+                    equip(message, args, command, dbo, bot, items);
                 }
 //#endregion
 
@@ -306,3 +344,6 @@ module.exports ={
         client.close();
     }, allGames, in_game_redirector
 }
+
+
+//#endregion

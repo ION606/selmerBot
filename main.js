@@ -151,6 +151,12 @@ bot.on('ready', async () => {
     } else {
         console.log("Testing testing 1 2 5...");
     }
+
+
+    //Add the money symbol
+    let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
+    emj = srv.find((g) => { return g.name == 'selmer_coin' });
+    bot.currencysymbolmmain = `${emj}`;
 });
 
 
@@ -239,7 +245,6 @@ bot.on('interactionCreate', async interaction => {
 
                             interaction.editReply(`<@${interaction.user.id}> used a _${interaction.values[0]}_!`);
 
-
                             //remove the old interation message
                             await interaction.message.delete();
                             
@@ -283,7 +288,7 @@ bot.on('guildMemberAdd', async (member) => {
 
             await welcome(member, welcomechannel, docs[0].welcomemessage);
         })
-    }) 
+    })
 });
 
 
@@ -312,16 +317,7 @@ bot.on('messageCreate', (message) => {
         message.channel.send({ components: [row] });
     }
 
-    //TEMP
-    if (command == 'emj') {
-        let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
-        // console.log(srv);
-        emj = srv.find((g) => { return g.name == 'healing_potion' });
-        // console.log(emj); exit();
-        message.channel.send(`${emj}`);
-    }
 
-    //Check if the user has sufficient permission
     //Performes the command
     //Admin section
     if (command == 'reactionrole') { bot.commands.get(command).execute(message, args, Discord, bot); }
