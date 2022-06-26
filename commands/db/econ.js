@@ -224,7 +224,7 @@ function work(dbo, message, xp_list) {
     let date = fulldate.getDate();
     dbo.find({"lastdayworked": {$exists: true}}).toArray(function(err, doc) {
         if (!String(doc)) { return message.reply("Your account doesn't exist, please contact the mods for support"); }
-        if (doc[0].lastdayworked == 111111) {//date
+        if (doc[0].lastdayworked == date) {//date
             message.reply("You've already worked today, try again tomorrow!");
         } else {
             //Amount to be paid
