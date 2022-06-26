@@ -164,7 +164,7 @@ bot.on('ready', async () => {
 bot.on('interactionCreate', async interaction => {
 
 	if (interaction.isButton()) {
-        const battlecommandlist = ['ATTACK', 'HEAL', 'DEFEND', 'ITEMS'];
+        const battlecommandlist = ['ATTACK', 'HEAL', 'DEFEND', 'ITEMS', 'ULTIMATE'];
 
         const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
         client.connect(err => {
@@ -183,7 +183,7 @@ bot.on('interactionCreate', async interaction => {
                             await interaction.deferReply();
 
                             //Check State
-                            if (docs[0].state == STATE.FIGHTING) {
+                            if (docs[0].state != STATE.IDLE) {
                                 //Do turn stuff
                                 bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection);
                             }
@@ -204,12 +204,17 @@ bot.on('interactionCreate', async interaction => {
 
         client.close();
     }
+
+    //Menu Selection
     else if (interaction.isSelectMenu()) {
+        const id = interaction.customId.substring(0, interaction.customId.indexOf('|'))
+        const command = interaction.customId.substring(interaction.customId.indexOf('|'), interaction.customId.length - interaction.customId.indexOf('|'))
+        console.log(command);
+        
         if (interaction.customId.toLowerCase().indexOf('|heal') != -1) {
             const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
             client.connect(err => {
-                const id = interaction.customId.substring(0, interaction.customId.indexOf('|'))
-                
+                console.log(id);
                 if (id != interaction.user.id) { return; }
 
                 let current_user = turnManager.getTurn(client, bot, interaction);
@@ -228,20 +233,6 @@ bot.on('interactionCreate', async interaction => {
                                 //Do turn stuff
                                 bot.commands.get('game').in_game_redirector(bot, interaction, threadname, doc, client, mongouri, items, xp_collection);
                             }
-                            
-                            /*
-                            let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
-                            let sname;
-
-                            if (interaction.customId.toLowerCase() == 'heal' || interaction.customId.toLowerCase() == 'mp') {
-                                if (interaction.values[0] == 'HP Potion') { sname = 'healing_potion' }
-                                else if (interaction.values[0] == 'MP Potion') { sname = 'mana_potion' }
-                                else if (interaction.values[0] == 'Super HP Potion') { sname = 'superior_healing_potion' }
-                                else if (interaction.values[0] == 'Super MP Potion') { sname = 'superior_mana_potion' }
-                            }
-
-                            // emj = srv.find((g) => { return g.name == sname });
-                            // console.log(sname, srv);*/
 
                             interaction.editReply(`<@${interaction.user.id}> used a _${interaction.values[0]}_!`);
 
@@ -257,8 +248,12 @@ bot.on('interactionCreate', async interaction => {
                 //Get all chars from after "CUSTOM|" to the end of the str
                 // let name = item.icon.substr(7, item.icon.length - 6);
             });
+        } else if (interaction.customId.toLowerCase().indexOf('|item') != -1) {
+
         }
-    }
+        
+        //menu else ifs here
+    } //other selection types here
 });
 
 
@@ -303,19 +298,6 @@ bot.on('messageCreate', (message) => {
 
     const args = message.content.slice(prefix.length).split(' ');
     const command = args.shift().toLowerCase();
-
-
-    if (command == 'welcome') {
-        const row = new MessageActionRow()
-        .addComponents(
-            new MessageButton()
-                .setCustomId('WELCOME')
-                .setLabel('WELCOME')
-                .setStyle('PRIMARY')
-        );
-
-        message.channel.send({ components: [row] });
-    }
 
 
     //Performes the command

@@ -42,7 +42,7 @@ function CreateNewCollection(message, client, server, id, opponent = null, game 
             if (!collinfo) {
                 message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
                 let hp_mp = {maxhp: BASE.HP, hp: BASE.HP, maxmp: BASE.MP, mp: BASE.MP}
-                dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hpmp: hp_mp, game: game, opponent: opponent, state: STATE.IDLE, equipped: { weapons: {main: null, secondary: null}, items: {}}});
+                dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hpmp: hp_mp, game: game, gamesettings: {battle: {class: 'none', ultimate: true}}, opponent: opponent, state: STATE.IDLE, equipped: { weapons: {main: null, secondary: null}, items: {}}});
             }
         });
     });
@@ -98,7 +98,7 @@ function getBalance(dbo, message) {
         if (doc[0] && doc[0].balance) {
             bal = doc[0].balance;
         }
-        return message.reply(`Your current balance is ${currencySymbol}${bal}`);
+        return message.reply(`<@${message.author.id}>, your current balance is ${currencySymbol}${bal}`);
     });
 }
 

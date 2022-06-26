@@ -1,5 +1,7 @@
 //THESE STRUCTURES SUPPORTS TWO PLAYERS ONLY!!!!
 
+const { STATE } = require("./db/econ");
+
 
 
 //Determines who's turn it currently is
@@ -38,10 +40,33 @@ function getTurn(client, bot, interaction) {
 function changeTurn(client, bot, interaction) {
     const db = client.db('B|S' + bot.user.id);
     const dbo = db.collection(interaction.member.guild.id);
+
     dbo.find({turn: {$exists: true}}).toArray(function (err, docs) {
-        let turn = docs[0].turn;
-        turn = Number(!turn);
-        dbo.updateOne(docs[0], {$set: {turn: turn}});
+        let turnnumer = docs[0].turn;
+        turnnumer = Number(!turnnumer);
+
+        //Check for prone, and change it if necessary
+        let turnInfo = getTurn(client, bot, interaction);
+
+        turnInfo.then(id = (turn => {
+            var id;
+            // console.log(turn); throw 1;
+            for (const [key, value] of Object.entries(turn[1])) {
+                if (key == turnnumer) { id = value; break; }
+            }
+            
+
+            const other_dbo = client.db(interaction.member.guild.id + '[ECON]').collection(id);
+
+            other_dbo.find({'state': {$exists: true}}).toArray((err, docs) => {
+                //If the person was prone, skip their turn
+                if (docs[0].state == STATE.PRONE) {
+                    dbo.updateOne({'turn': {$exists: true}}, {$set: {state: STATE.FIGHTING}});
+                } else {
+                    dbo.updateOne({'turn': {$exists: true}}, {$set: {turn: turnnumer}});
+                }
+            });
+        }))
     });
 }
 

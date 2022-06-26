@@ -1,46 +1,101 @@
 //@ts-check
-const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const { MessageActionRow, MessageButton, MessageSelectMenu, Client, CommandInteractionOptionResolver } = require('discord.js');
 const { STATE } = require('./econ');
 const { winGame, getCustomEmoji } = require('./external_game_functions.js');
 const { changeTurn } = require('../turnManager.js');
-const { default: mongoose } = require('mongoose');
+const { game_class_battle } = require('./game_classes');
+const { MongoClient } = require('mongodb');
+const { convertSnowflakeToDate } = require('./addons/snowflake');
 
 
 function postActionBar(thread, user_dbo) {
-    const row = new MessageActionRow()
-        .addComponents(
-            new MessageButton()
-                .setCustomId('ATTACK')
-                .setLabel('ATTACK')
-                .setStyle('DANGER'),
-            new MessageButton()
-                .setCustomId('HEAL')
-                .setLabel('HEAL')
-                .setStyle('SUCCESS'),
-            new MessageButton()
-                .setCustomId('DEFEND')
-                .setLabel('DEFEND')
-                .setStyle('PRIMARY'),
-            new MessageButton()
-                .setCustomId('ITEMS')
-                .setLabel('ITEMS')
-                .setStyle('SECONDARY')
-        );
+    user_dbo.find({'hpmp.hp': {$exists: true}}).toArray((err, docs) => {
+        const hp = docs[0].hpmp.hp;
+        const mp = docs[0].hpmp.mp;
+        let row;
+        
+        if (docs[0].gamesettings.battle.class != 'none' && docs[0].gamesettings.battle.ultimate) {
+            row = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId('ATTACK')
+                    .setLabel('ATTACK')
+                    .setStyle('DANGER'),
+                new MessageButton()
+                    .setCustomId('HEAL')
+                    .setLabel('HEAL')
+                    .setStyle('SUCCESS'),
+                new MessageButton()
+                    .setCustomId('DEFEND')
+                    .setLabel('DEFEND')
+                    .setStyle('PRIMARY'),
+                new MessageButton()
+                    .setCustomId('ULTIMATE')
+                    .setLabel('ULTIMATE')
+                    .setStyle('DANGER')
+            );
+        } else {
+            //If the ultimate can't be used, change the menu
+            row = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId('ATTACK')
+                    .setLabel('ATTACK')
+                    .setStyle('DANGER'),
+                new MessageButton()
+                    .setCustomId('HEAL')
+                    .setLabel('HEAL')
+                    .setStyle('SUCCESS'),
+                new MessageButton()
+                    .setCustomId('DEFEND')
+                    .setLabel('DEFEND')
+                    .setStyle('PRIMARY'),
+            );
+        }
+        /*
+        //UNDER DEVELOPMENT
+        new MessageButton()
+            .setCustomId('ITEMS')
+            .setLabel('ITEMS')
+            .setStyle('SECONDARY')
+        */
 
-    thread.send({ content: `Your turn <@${user_dbo.s.namespace.collection}>!`, components: [row] });
+        thread.send({ content: `Your turn <@${user_dbo.s.namespace.collection}>!\nHP: ${hp}\t|\tMP: ${mp}`, components: [row] });
+    })
 }
 
 
 /**
  * Called by "attack"
+ * @param {game_class_battle} gclass
  */
-function attack_special() {
+function attack_special(client, user_dbo, other_dbo, bot, thread, xp_collection, interaction, gclass) {
+    const atk = gclass.specialAttack;
+    if (!atk) { return thread.send("You don't have a class, and so can't use an ultimate!"); }
+    
+    user_dbo.find({'rank': {$exists: true}}).toArray((err, docs) => {
+        const doc = docs[0];
 
+        //Check if the user can use ultimate
+        if (atk.dmg.split('*')[0] == 'r') {
+            const rank = doc.rank;
+            const dmg = Number(atk.dmg.split('*')[1]) * rank;
+            attack(client, user_dbo, other_dbo, bot, thread, xp_collection, interaction, dmg);
+        }
+    })
+
+    //Apply a "stunned" effect
+    if (atk.prone == true) {
+        other_dbo.updateOne({'state': {$exists: true}}, {$set: {state: STATE.PRONE}});
+        thread.send(`<@${interaction.user.id}> was knocked prone and lost 1 turn!`);
+    }
+
+    changeTurn(client, bot, interaction);
 }
 
 
 //Bow special phrase: Σ>―(´･ω･`)→
-function attack(client, user_dbo, other_dbo, bot, thread, xp_collection, interaction) {
+function attack(client, user_dbo, other_dbo, bot, thread, xp_collection, interaction, preset_damage = 0) {
     //Get the weapon
     user_dbo.find({'equipped': {$exists: true}}).toArray(function(err, docs) {
         const doc = docs[0];
@@ -50,11 +105,15 @@ function attack(client, user_dbo, other_dbo, bot, thread, xp_collection, interac
         var dmg = 0;
 
         //No weapons (punch)
-        if (weapon == null) {
-            dmg = doc.rank;
+        if (preset_damage > 0) {
+            dmg = preset_damage;
         } else {
-            dmg = (doc.rank - 1) + Math.round(weapon.cost/5);
-        }        
+            if (weapon == null) {
+                dmg = doc.rank;
+            } else {
+                dmg = (doc.rank - 1) + Math.round(weapon.cost/5);
+            } 
+        }       
 
         other_dbo.find({'equipped': {$exists: true}}).toArray(function (err, docs) {
             const odoc = docs[0];
@@ -72,17 +131,16 @@ function attack(client, user_dbo, other_dbo, bot, thread, xp_collection, interac
             if (new_hp <= 0) {
                 winGame(client, bot, client.db(user_dbo.s.namespace.db), user_dbo, xp_collection, interaction.message);
             } else {
-                other_dbo.updateOne({'equipped': {$exists: true}}, { $set: { 'hpmp.hp' :new_hp, state: STATE.FIGHTING }});
+                other_dbo.updateOne({'equipped': {$exists: true}}, { $set: { 'hpmp.hp': new_hp, state: STATE.FIGHTING }});
+                
+                //Change turns
+                changeTurn(client, bot, interaction);
             }
         });
 
     })
 
     //Check for a "special" animation
-    
-
-    //Change turns
-    changeTurn(client, bot, interaction);
 }
 
 
@@ -97,11 +155,16 @@ async function heal(interaction, client, user_dbo, bot, thread, command, mongour
     user_dbo.find({'equipped': {$exists: true}}).toArray(async function(err, docs) {
         const doc = docs[0];
         const rawitems = doc.equipped.items;
+        if (JSON.stringify(rawitems) == '{}') {
+            interaction.editReply("You don't have any items!");
+            return postActionBar(thread, user_dbo);
+        }
+
+        console.log(rawitems);
         const items = rawitems.filter(function(f) { return (f.sect.toLowerCase() == 'hp') });
 
-
         if  (JSON.stringify(items) == '[]') {
-            interaction.editReply("You don't have any items!");
+            interaction.editReply("You don't have any healing items!");
             return postActionBar(thread, user_dbo);
         } else { console.log(JSON.stringify(items))}
 
@@ -123,18 +186,6 @@ async function heal(interaction, client, user_dbo, bot, thread, command, mongour
                 .setCustomId(`${interaction.user.id}|heal`)
                 .setPlaceholder('Nothing selected')
                 .addOptions(itemlist),
-                // .addOptions([
-                //     {
-                //         label: 'Select me',
-                //         description: 'This is a description',
-                //         value: 'first_option',
-                //     },
-                //     {
-                //         label: 'You can select me too',
-                //         description: 'This is also a description',
-                //         value: 'second_option',
-                //     },
-                // ])
         );
 
         await interaction.editReply({ content: 'Please choose a health potion!', components: [row] });
@@ -171,12 +222,12 @@ function presentItems(interaction, client, user_dbo, bot, thread) {
         const row = new MessageActionRow()
         .addComponents(
             new MessageSelectMenu()
-                .setCustomId(`${interaction.user.id}|heal`)
+                .setCustomId(`${interaction.user.id}|item`)
                 .setPlaceholder('Nothing selected')
                 .addOptions(itemlist)
         );
 
-        await interaction.editReply({ content: 'Please choose a health potion!', components: [row] });
+        await interaction.editReply({ content: 'Please choose an item!', components: [row] });
     });
 }
 
@@ -184,21 +235,19 @@ function presentItems(interaction, client, user_dbo, bot, thread) {
 function defend(client, interaction, user_dbo, bot, thread) {
     user_dbo.find({'equipped': {$exists: true}}).toArray(function(err, docs) {
         const doc = docs[0];
-        const all_weapons = doc.get('weapons');
-        const shield = all_weapons.get('secondary');
+        const all_weapons = doc.equipped.weapons;
 
         //They don't have a shield
-        if (shield == undefined) {
+        if (all_weapons == undefined) {
             thread.send("You don't have a shield equipped!");
-            return postActionBar(thread, user_dbo);
         }
+        const shield = all_weapons.secondary;
         
         //Change state
         user_dbo.updateOne({state: {$exists: true}}, {$set: {state: STATE.DEFENDING}});
-    })
 
-    changeTurn(client, bot, interaction);
-    postActionBar(thread, user_dbo);
+        changeTurn(client, bot, interaction);
+    })
 }
 
 
@@ -237,23 +286,43 @@ function cast() {
 
 
 
+/**
+ * 
+ * @param {MongoClient} client 
+ * @param {*} user_dbo 
+ * @param {*} other_dbo 
+ * @param {Client} bot 
+ * @param {*} thread 
+ * @param {String} command 
+ * @param {String} mongouri 
+ * @param {String[]} items 
+ * @param {*} interaction 
+ * @param {Map<string, Map>} xp_collection 
+ */
 async function handle(client, user_dbo, other_dbo, bot, thread, command, mongouri, items, interaction, xp_collection) {
+
     if (command == 'initalize') {
         return postActionBar(thread, user_dbo);
     } else if (command == 'attack') {
         attack(client, user_dbo, other_dbo, bot, thread, xp_collection, interaction);
         postActionBar(thread, other_dbo);
     } else if (command == 'items') {
-        presentItems(interaction, client, user_dbo, bot, thread);
+        presentItems(interaction, client, user_dbo, bot, thread); //Maybe like wands?
     } else if (command == 'heal') {
         heal(interaction, client, user_dbo, bot, thread, command, mongouri, items); //.then(() => {postActionBar(thread, other_dbo)});
     } else if (command == 'usepotion') {
         usePotion(interaction, client, user_dbo, bot, thread);
     } else if (command == 'defend') {
         defend(client, interaction, user_dbo, bot, thread);
+        postActionBar(thread, user_dbo);
+    } else if (command == 'ultimate') {
+        user_dbo.find({'gamesettings': {$exists: true}}).toArray((err, docs) => {
+            var gclass = new game_class_battle(docs[0].gamesettings.battle.class);
+            attack_special(client, user_dbo, other_dbo, bot, thread, xp_collection, interaction, gclass);
+            postActionBar(thread, user_dbo);
+        });
     }
-
-    // initiate(user_dbo, other_dbo, command, message);
 }
+
 
 module.exports = { handle, postActionBar }

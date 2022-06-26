@@ -55,6 +55,8 @@ function winGame(client, bot, db, user_dbo, xp_collection, message) {
         //Update the player with xp
         user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank), 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
+        const channel = bot.channels.cache.get(message.channel.parentId);
+        channel.send(`<@${user_dbo.s.namespace.collection}> just won a game of "${docs[0].game}"!`);
         message.channel.delete();
     });
 }

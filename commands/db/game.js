@@ -8,6 +8,7 @@ const STATE = ecoimport.STATE;
 const BASE = ecoimport.BASE;
 
 const { winGame, loseGame, equipItem } = require('./external_game_functions.js');
+const { chooseClass, presentClasses } = require('./game_classes.js');
 
 //Has a list of all games (used to change player state)
 const allGames = ['battle'];
@@ -315,6 +316,8 @@ module.exports ={
                 } else if (command == 'equip') {
                     // equipItem(client, bot, db, dbo, message);
                     equip(message, args, command, dbo, bot, items);
+                } else if (command == 'classes') {
+                    presentClasses(message, args[1]);
                 }
 //#endregion
 
