@@ -6,13 +6,13 @@ module.exports ={
         if (args[0] == 'econ') {
             let temp = "***Selmer Bot Commands (Econ):***\n";
             temp += bot.commands.get('econ').econHelp();
-            temp += `\n\n(remember to use '${bot.prefix}' before the command!)`;
+            temp += `\n\n(remember to use _'${bot.prefix}'_ before the command!)`;
             return message.channel.send(temp);
         } 
         else if (args[0] == 'game') {
             let temp = "***Selmer Bot Commands (Games):***\n";
             temp += bot.commands.get('game').allGames.join(", ");
-            temp += `\n\n(remember to use '${bot.prefix}'game before the command!)`;
+            temp += `\n\n(remember to use _'${bot.prefix}game'_ before the command!)`;
             return message.channel.send(temp);
         }
 
