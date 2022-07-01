@@ -1,11 +1,11 @@
 //@ts-check
 const { MessageActionRow, MessageButton, MessageSelectMenu, Client, CommandInteractionOptionResolver } = require('discord.js');
-const { STATE } = require('./econ');
+const { STATE } = require('../db/econ');
 const { winGame, getCustomEmoji } = require('./external_game_functions.js');
 const { changeTurn } = require('../turnManager.js');
 const { game_class_battle } = require('./game_classes');
 const { MongoClient } = require('mongodb');
-const { convertSnowflakeToDate } = require('./addons/snowflake');
+const { convertSnowflakeToDate } = require('../db/addons/snowflake');
 
 
 function postActionBar(thread, user_dbo) {

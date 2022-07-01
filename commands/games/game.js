@@ -1,9 +1,15 @@
 // // @ts-check //Disabled
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
-let ecoimport = require("./econ.js");
-let { handle } = require("./battle.js"); //PROBLEM (CIRCULAR DEPENDANCY)
-let snowflake = require("./addons/snowflake.js");
+let ecoimport = require("../db/econ.js");
+
+//#region Game Imports
+const battle = require("./battle.js");
+const ttt = require('./tictactoe.js');
+
+//#endregion
+
+let snowflake = require("../db/addons/snowflake.js");
 const STATE = ecoimport.STATE;
 const BASE = ecoimport.BASE;
 
@@ -11,7 +17,7 @@ const { winGame, loseGame, equipItem } = require('./external_game_functions.js')
 const { chooseClass, presentClasses } = require('./game_classes.js');
 
 //Has a list of all games (used to change player state)
-const allGames = ['battle'];
+const allGames = ['battle', 'Tic Tac Toe'];
 // const { NULL } = require('mysql/lib/protocol/constants/types');
 
 
@@ -24,6 +30,7 @@ async function Initialize(bot, user_dbo, command, message, first, second, other_
     return new Promise(async function(resolve, reject) {
         user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
             let doc = docs[0];
+            console.log(command);
             if (allGames.indexOf(command) != -1) {
                 if (other_dbo != null) {
                     user_dbo.updateOne( { "game": {$exists: true} }, { $set: { game: command, opponent: other_dbo.s.namespace.collection, state: STATE.FIGHTING }});
@@ -192,7 +199,11 @@ function in_game_redirector(bot, interaction, threadname, doc, client, mongouri,
         const game = docs[0].game
         
         switch (game) {
-            case 'battle': handle(client, dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items, interaction, xp_collection);
+            case 'battle': battle.handle(client, dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items, interaction, xp_collection);
+            break;
+
+            case 'Tic Tac Toe': ttt.handle(client, db, dbo, other, bot, thread, null, doc, interaction, xp_collection);
+            break;
         }
     });
 }
@@ -202,8 +213,6 @@ module.exports ={
     name: "game",
     description: "Play a game using Selmer Bot!",
     async execute(bot, message, args, command, Discord, mongouri, items, xp_collection) {
-
-        if (!bot.inDebugMode) { return message.reply("This command is currently in development!"); }
 
 
 //#region Setup
@@ -226,7 +235,6 @@ module.exports ={
 
         //Check for a second person and create a second database entry if neccessary
         if (message.mentions.users.first() != undefined) {
-//#TODO     //FIX THIS (NOT THE RIGHT CLIENT 100% OF THE TIME!!!!!!!)
             ecoimport.CreateNewCollection(message, client, server, message.mentions.users.first().id);
         }
 
@@ -283,15 +291,41 @@ module.exports ={
                     // message.reply(`${first} [${name_first}], ${second} [${name_second}]`); throw 'ERR';
                     const threadname = `${name_first.username} VS ${name_second.username} [${newCommand.toUpperCase()}]`;
                     var newObj = {0: id, 1: other_discord.id, turn: 0, thread: threadname};
+
+                    if (newCommand.replaceAll(" ", "").toLowerCase() == 'tictactoe') { newCommand = 'Tic Tac Toe'; }
+
+                    if (newCommand === 'Tic Tac Toe') {
+                        //Create the new board
+                        let newboard = ["", "", "", "", "", "", "", "", ""];
+                        newObj.board = newboard;
+                        let symbols;
+
+                        /*DOES NOT WORK
+                        if (msg.content.lastIndexOf('>') == msg.content.lenth) {
+                            symbols = ['X', 'O'];
+                        } else {
+                            symbols = msg.content.substring(msg.content.lastIndexOf('>') + 2).split(' ');
+                        }
+                        */
+                        newObj.symbols = ['X', 'O'];
+                    }
+                    
                     serverinbotdb.insertOne(newObj);
 
                     //#endregion
 
 
+
+                    //Need this for all 2 player games
+                    const result = Initialize(bot, dbo, newCommand, msg, id, other_discord.id, other);
+
                     if (newCommand == 'battle') {
-                        const result = Initialize(bot, dbo, newCommand, msg, id, other_discord.id, other);
                         result.then(function (thread) {
-                            handle(client, dbo, other, bot, thread, 'initalize', mongouri, items, null, xp_collection);
+                            battle.handle(client, dbo, other, bot, thread, 'initalize', mongouri, items, null, xp_collection);
+                        });
+                    } else if (newCommand == 'Tic Tac Toe') {
+                        result.then(function (thread) {
+                            ttt.handle(client, db, dbo, other, bot, thread, 'initalize', mongouri, null, xp_collection);
                         });
                     }
                 } else if (command == 'quit') {
@@ -323,14 +357,26 @@ module.exports ={
 
 //#region game-specific commands
                 else {
+                    //Make change to new name if necessary
+                    if (command.replaceAll(" ", "").toLowerCase() == 'tictactoe') { command = 'Tic Tac Toe'; }
+                    
                     if (game == 'battle' || command == 'battle') {
+                        if (!bot.inDebugMode) { return message.reply("This command is currently in development!"); }
+                        
                         //Handle sending the request and making sure the user exists here
                         let other_discord = message.mentions.users.first();
                         if (other_discord == undefined) {
                             return message.reply(`${args[1]} is not a valid user!`);
                         }
                         
-                        message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play "battle", to accept, please reply to this message with _!game accept_`);
+                        message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"battle"_. To accept, please reply to this message with _!game accept_`);
+                    } else if (game == 'Tic Tac Toe' || command == 'Tic Tac Toe') {
+                        let other_discord = message.mentions.users.first();
+                        if (other_discord == undefined) {
+                            return message.reply(`${args[1]} is not a valid user!`);
+                        }
+                        
+                        message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"Tic Tac Toe"_. To accept, please reply to this message with _!game accept_`);
                     }
 
                     //Catch statement (invalid command)

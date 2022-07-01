@@ -1,5 +1,5 @@
 //@ts-check
-const { addxp, STATE, BASE } = require("./econ.js");
+const { addxp, STATE, BASE } = require("../db/econ");
 const turnManger = require('../turnManager.js');
 
 
