@@ -12,7 +12,7 @@ module.exports ={
         else if (args[0] == 'game') {
             let temp = "***Selmer Bot Commands (Games):***\n";
             temp += bot.commands.get('game').allGames.join(", ");
-            temp += `\n\n(remember to use '${bot.prefix}' before the command!)`;
+            temp += `\n\n(remember to use '${bot.prefix}'game before the command!)`;
             return message.channel.send(temp);
         }
 
