@@ -2,9 +2,13 @@ const { Client, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = 
 const Discord = require('discord.js');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const fs = require('fs');
+// const OpenAI = require('openai-api')
+const { Configuration, OpenAIApi } = require("openai");
+
 const turnManager  = require('./commands/turnManager.js');
 const { welcome } = require('./commands/admin/welcome.js');
 const { handle_interaction } = require('./commands/interactionhandler.js');
+const { handle_dm } = require('./commands/dm_handler');
 const { exit } = require('process');
 const BASE_LVL_XP = 20;
 
@@ -14,14 +18,20 @@ const BASE_LVL_XP = 20;
 let token;
 let IDM = false;
 let home_server;
+
+let MLAIKEY;
+
+
 if (process.env.token != undefined) {
     //Use "setx NAME VALUE" in the local powershell terminal to set
     token = process.env.token;
     home_server = process.env.home_server;
+    MLAIKEY = process.env.MLAIKEY;
 } else {
     token = require('./config.json').token;
     home_server = require('./config.json').home_server;
     IDM = true;
+    MLAIKEY = new require('./config.json').MLAIKEY;
 }
 
 // const { token } = require('./config.json');
@@ -36,8 +46,12 @@ const bot = new Client({
         Intents.FLAGS.GUILD_VOICE_STATES,
         Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
         Intents.FLAGS.GUILD_PRESENCES,
-        Intents.FLAGS.GUILD_MEMBERS
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.DIRECT_MESSAGES,
+        Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+        Intents.FLAGS.DIRECT_MESSAGE_TYPING,
     ],
+    partials: [ 'CHANNEL' ]
 });
 
 const prefix = '!';
@@ -45,6 +59,12 @@ bot.prefix = new String;
 bot.prefix = prefix;
 bot.inDebugMode = IDM;
 bot.home_server = home_server;
+
+const configuration = new Configuration({
+    apiKey: MLAIKEY,
+});
+bot.openai = new OpenAIApi(configuration);
+bot.temptext = '';
 
 
 //MongoDB integration
@@ -56,6 +76,7 @@ if (process.env.MONGODB_URI) {
     mongouritemp = require('./config.json');
 }
 const mongouri = mongouritemp;
+bot.mongouri = mongouri;
 const { connect } = require('mongoose');
 
 bot.on("guildCreate", guild => {
@@ -198,6 +219,11 @@ bot.on('guildMemberAdd', async (member) => {
 
 
 bot.on('messageCreate', (message) => {
+
+    //DM SECTION
+    if (message.channel.type === "DM") {
+        return handle_dm(message, bot);
+      }
 
     //Special case, testing server (still need the emojis)
     if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
