@@ -57,7 +57,7 @@ async function convoManager(clientinp, bot, message) {
 
             dbo.updateOne(doc, {$set: {convo: convo}});
             response = response.replaceAll('AI: ', '').replaceAll('AI:\n', '');
-            console.log(response);
+
             message.reply(response);
         });
     }
@@ -66,5 +66,8 @@ async function convoManager(clientinp, bot, message) {
 module.exports = {
     name: 'chat',
     description: 'chat',
-    convoManager
+    convoManager,
+    execute(message, args, Discord, Client, bot) {
+        message.reply("Please DM Selmer bot to use this command!");
+    }
 }

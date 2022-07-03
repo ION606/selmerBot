@@ -17,6 +17,8 @@ function handle_dm(message, bot) {
                 //Only available to Selmer Bot devs, testers and "authorized" users
                 if (docs[0] != undefined || member.roles.cache.has('944048889038774302') || member.roles.cache.has('946610800418762792')) {
                     convoManager(client, bot, message);
+                } else {
+                    message.reply("You have to be a premium subscriber to use this feature!\n_support coming soon_");
                 }
             });
         });
