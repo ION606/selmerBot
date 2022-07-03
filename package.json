@@ -18,6 +18,8 @@
     "mongoose": "^6.3.2",
     "mysql": "^2.18.1",
     "node.js": "^0.0.1-security",
+    "npm": "^8.13.2",
+    "openai": "^3.0.0",
     "play-dl": "^1.9.4",
     "random-memes": "^3.1.0",
     "sequelize": "^6.19.0",
