@@ -1,4 +1,5 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { createSubscriptionManual } = require('./API/stripe.js');
 
 
 async function handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection) {
@@ -65,8 +66,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
     //Menu Selection
     else if (interaction.isSelectMenu()) {
         const id = interaction.customId.substring(0, interaction.customId.indexOf('|'))
-        const command = interaction.customId.substring(interaction.customId.indexOf('|'), interaction.customId.length - interaction.customId.indexOf('|'))
-        console.log(command);
+        // const command = interaction.customId.substring(interaction.customId.indexOf('|'), interaction.customId.length - interaction.customId.indexOf('|'))
         
         if (interaction.customId.toLowerCase().indexOf('|heal') != -1) {
             const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -107,6 +107,16 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
             });
         } else if (interaction.customId.toLowerCase().indexOf('|item') != -1) {
 
+        } else if (interaction.customId.split('|')[1] == 'premium') {
+            //Check if the person subscribing and the person clicking are the same (group DM catch)
+            const user = interaction.customId.split('|')[0];
+            if (interaction.user.id == user) {
+                // await interaction.deferReply();
+                await interaction.update({ content: 'TIER SELECTED PLEASE HOLD', components: [] });
+                await createSubscriptionManual(bot, interaction, user, interaction.values[0]);
+
+                //Handle the interaction here
+            }
         }
         
         //menu else ifs here
@@ -115,3 +125,6 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
 
 
 module.exports = { handle_interaction }
+
+//values: [ 'price_1LI5pzFtuywsbrwdlY1gWMkV' ]
+//values: [ 'price_1LIpROFtuywsbrwdmxOb8Baj' ]

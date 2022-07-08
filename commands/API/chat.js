@@ -1,5 +1,6 @@
 const { MongoClient, ServerApiVersion, ConnectionClosedEvent } = require('mongodb');
 const { exit } = require('process');
+const { checkResponses } = require('./wordlist.js');
 
 
 async function getResponse(convo, bot) {
@@ -45,6 +46,11 @@ async function convoManager(clientinp, bot, message) {
             const doc = docs[0];
             if (!doc) { return message.reply('You aren\'t currently in a conversation\nUse _!startconvo_ to start one!'); }
 
+            //Checking Section
+            const check = checkResponses(message.content, "I'm sorry, I can't do that");
+            if (check != null) { return message.reply(check); }
+
+
             let convo = doc.convo;
             convo += `\nHuman: ${message.content}\n`;;
 
@@ -62,6 +68,7 @@ async function convoManager(clientinp, bot, message) {
         });
     }
 }
+
 //"Hello! discord_user:"
 module.exports = {
     name: 'chat',

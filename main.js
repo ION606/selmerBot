@@ -4,6 +4,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const fs = require('fs');
 // const OpenAI = require('openai-api')
 const { Configuration, OpenAIApi } = require("openai");
+const Stripe = require('stripe');
 
 const turnManager  = require('./commands/turnManager.js');
 const { welcome } = require('./commands/admin/welcome.js');
@@ -13,30 +14,31 @@ const { exit } = require('process');
 const BASE_LVL_XP = 20;
 
 
-//Token area
+//#region Token area
+
 //Adding integration for development mode
 let token;
 let IDM = false;
 let home_server;
 
 let MLAIKEY;
-
+let StripeAPIKey;
 
 if (process.env.token != undefined) {
     //Use "setx NAME VALUE" in the local powershell terminal to set
     token = process.env.token;
     home_server = process.env.home_server;
     MLAIKEY = process.env.MLAIKEY;
+    StripeAPIKey = process.env.StripeAPIKey;
 } else {
     token = require('./config.json').token;
     home_server = require('./config.json').home_server;
     IDM = true;
-    MLAIKEY = new require('./config.json').MLAIKEY;
+    MLAIKEY = require('./config.json').MLAIKEY;
+    StripeAPIKey = require('./config.json').StripeAPIKey;
 }
 
-// const { token } = require('./config.json');
-//Heroku part
-// const { token } = process.env.token;
+//#endregion
 
 const bot = new Client({ 
     intents: [
@@ -65,9 +67,10 @@ const configuration = new Configuration({
 });
 bot.openai = new OpenAIApi(configuration);
 bot.temptext = '';
+bot.stripe = Stripe(StripeAPIKey);
 
 
-//MongoDB integration
+//#region MongoDB integration
 //Development support
 let mongouritemp;
 if (process.env.MONGODB_URI) {
@@ -79,62 +82,47 @@ const mongouri = mongouritemp;
 bot.mongouri = mongouri;
 const { connect } = require('mongoose');
 
-bot.on("guildCreate", guild => {
-    guild.roles.create({ name: 'Selmer Bot Mod' });
-
-    //const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
-    const server = bot.guilds.cache.get(guild.id);
-    const owner = server.members.fetch(guild.ownerId).then(function(owner) {
-        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Mod_" role.');
-        owner.send('To help set up Selmer Bot to work better with your server, use _!setup help_ in a channel Selmer Bot is in!');
-    });
-
-    //Set up the server
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    client.connect(err => {
-        if (err) { return console.log(err); }
-        
-        const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}]);
-    });
-
-    client.close();
-});
+//#endregion MongoDB Integration end
 
 
-//MongoDB Integration end
-// let item = items.filter(function (item) { return item.name.toLowerCase() == 'grapes'; });
+//#region set up bot commands
+
+// const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js')); // Obsolete?
 
 bot.commands = new Discord.Collection();
+const forbiddenFolders = ['db', 'API', 'dev only'];
 
-const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
-
-
-bot.commands = new Discord.Collection();
 fs.readdirSync('./commands')
   .forEach(dir => {
-      if (dir != 'db' && !dir.endsWith('.js')) {
+      if (!forbiddenFolders.includes(dir) && !dir.endsWith('.js')) {
         fs.readdirSync(`./commands/${dir}`)
         .filter(file => file.endsWith('.js'))
         .forEach(file => {
            const command = require(`./commands/${dir}/${file}`);
            bot.commands.set(command.name, command);
         });
-      }
+      } else { console.log(dir); }
   });
 
 
-  //Set these two manually because all the seperate games can't be included in the command list (all managed by the 'game' file)
+//Set these two manually because all the seperate games can't be included in the command list (all managed by the 'game' file)
 let temp_command = require("./commands/db/econ.js");
 const { STATE } = require('./commands/db/econ.js');
 bot.commands.set('econ', temp_command);
 temp_command = require('./commands/games/game.js');
 bot.commands.set('game', temp_command);
 
-// const econFiles = fs.readdirSync('./commands/inventory').filter(file => file.endsWith('.js'));;
-// const currency = new Discord.Collection();
-// const { Users } = require('./commands/currency/dbObjects.js');
-// i++;
+//Everything in the API should be handled by specific handler functions
+const chat = require('./commands/API/chat.js');
+bot.commands.set('chat', chat);
+const stripeCommands = require('./commands/API/stripe.js');
+bot.commands.set('premium', stripeCommands);
+
+//#endregion
+
+
+
+//#region bot.[anything] section
 
 //XP Table section
 let xp_collection = new Map();
@@ -186,6 +174,32 @@ bot.on('ready', async () => {
 bot.on('interactionCreate', async interaction => {
     handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection);
 });
+
+
+
+//Add the bot to a server setup
+bot.on("guildCreate", guild => {
+    guild.roles.create({ name: 'Selmer Bot Mod' });
+
+    //const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
+    const server = bot.guilds.cache.get(guild.id);
+    const owner = server.members.fetch(guild.ownerId).then(function(owner) {
+        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Mod_" role.');
+        owner.send('To help set up Selmer Bot to work better with your server, use _!setup help_ in a channel Selmer Bot is in!');
+    });
+
+    //Set up the server
+    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+    client.connect(err => {
+        if (err) { return console.log(err); }
+        
+        const dbo = client.db(guild.id).collection('SETUP');
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}]);
+    });
+
+    client.close();
+});
+
 
 
 //Welcome new members
@@ -253,9 +267,7 @@ bot.on('messageCreate', (message) => {
     else { bot.commands.get('econ').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
 })
 
-//Look into integrating MySQL into SelmerBot instead of SQLite
+//#endregion
 
 //Last Line(s)
-// bot.login(token);
-
 bot.login(token);

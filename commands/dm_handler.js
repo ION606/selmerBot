@@ -1,4 +1,5 @@
 const { convoManager } = require('./API/chat.js');
+const { handleInp } = require('./API/stripe');
 const { MongoClient, ServerApiVersion, ConnectionClosedEvent } = require('mongodb');
 
 function handle_dm(message, bot) {
@@ -24,6 +25,8 @@ function handle_dm(message, bot) {
         });
 
         client.close();
+    } else if (message.content.indexOf('!premium') != -1) {
+        handleInp(bot, message);
     } else {
         return message.reply('UNUSABLE DM COMMAND DETECTED');
     }
