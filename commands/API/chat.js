@@ -3,7 +3,7 @@ const { exit } = require('process');
 const { checkResponses } = require('./wordlist.js');
 
 
-//Error checking function (message deleted error fix)
+//Error checking function (message deleted error fix, workaround already applied but...)
 //message.channel.send("Oops, there's been an error, please contact support!");
 async function messageExists(message) {
     return new Promise((resolve, reject) => {

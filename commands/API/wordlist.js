@@ -17,15 +17,12 @@ function checkResponses(convoOG, answer) {
 
     if (b === 'pay') {
         //Exctract the number
-        var amt = convoOG.match(/(\d+)/)[0];
+        // var amt = convoOG.match(/(\d+)/)[0];
+        // currency = convoOG[convoOG.indexOf(amt) - 1];
         
-        
-        if (matches) {
-            currency = convoOG[convoOG.indexOf(amt) - 1];
-            //Do something with pay API to get the amount here
-        }
+        return ('Use _!premium_ to get Selmer Bot Premium now!');
     } else if (b == 'name') {
-        return 'My name is Selmer Bot!';
+        return ('My name is Selmer Bot!');
     } else { return null; }
 
     return b;

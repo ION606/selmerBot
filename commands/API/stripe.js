@@ -1,5 +1,5 @@
 /*
------WEBHOOKS ARE RECIEVED AND MONITORED HERE-----
+-----WEBHOOKS ARE MONITORED AND PROCESSED HERE-----
 https://glitch.com/edit/#!/selmer-bot-listener
 --------------------------------------------------
 */
@@ -13,7 +13,7 @@ async function createSubscriptionManual(bot, interaction, id, priceID) {
     const stripe = bot.stripe;
     const mongouri = bot.mongouri;
 
-    //Start Error Checking
+    //Error Checking (unlikely, but just in case)
     if (!id) { console.log('....What? How?'); return interaction.editReply("Uh oh, something happened with the Stripe Discord ID check, please contact support!"); }
 
     const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -75,7 +75,7 @@ async function changeSubscriptionManual(bot, message) {
     const mongouri = bot.mongouri;
     const id = message.author.id;
 
-    //Start Error Checking
+    //Just in case
     if (!id) { return console.log('....What? How?'); }
 
     const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -105,17 +105,13 @@ async function changeSubscriptionManual(bot, message) {
             return_url: "https://linktr.ee/selmerbot",
         });
         message.reply(session.url);
-        // console.log(session.url);
     }).catch((err) => {
         message.reply(err);
-        // console.log(err);
     });
 }
 
 
-function createDropDown(bot, message) {
-  // const stripe = bot.stripe;
-  
+function createDropDown(bot, message) {  
   const stripe = bot.stripe;
 
   const pl = [];
@@ -155,14 +151,13 @@ function createDropDown(bot, message) {
 
 
 function handleInp(bot, message) {
-    if (message.content == '!premium help') {
-      message.reply('Use _!premium buy_ to get premium or use _!premium manage_ to change or cancel your subscription\n_Disclaimer: Selmer Bot uses Stripe to manage payments. Read more at *https://stripe.com/ *_');
+    if (message.content == '!premium' || message.content == '!premium help') {
+      message.reply('Use _!premium buy_ to get premium or use _!premium manage_ to change or cancel your subscription\n\n_Disclaimer: Selmer Bot uses Stripe to manage payments. Read more at *https://stripe.com/ *_');
     } else if (message.content == '!premium buy') {
       createDropDown(bot, message);
     } else if (message.content == '!premium manage') {
-      changeSubscriptionManual(bot, message)
+      changeSubscriptionManual(bot, message);
     }
-    
 }
 
 

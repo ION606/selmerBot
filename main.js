@@ -10,6 +10,7 @@ const turnManager  = require('./commands/turnManager.js');
 const { welcome } = require('./commands/admin/welcome.js');
 const { handle_interaction } = require('./commands/interactionhandler.js');
 const { handle_dm } = require('./commands/dm_handler');
+const { devCheck } = require('./commands/dev only/devcheck.js');
 const { exit } = require('process');
 const BASE_LVL_XP = 20;
 
@@ -237,7 +238,10 @@ bot.on('messageCreate', (message) => {
     //DM SECTION
     if (message.channel.type === "DM") {
         return handle_dm(message, bot);
-      }
+    } else if (message.content.indexOf('!spam_collection') != -1) {
+        //Handle spam collection/Dev commands
+        return devCheck(message, bot);
+    }
 
     //Special case, testing server (still need the emojis)
     if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
