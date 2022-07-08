@@ -3,6 +3,26 @@ const { exit } = require('process');
 const { checkResponses } = require('./wordlist.js');
 
 
+//Error checking function (message deleted error fix)
+//message.channel.send("Oops, there's been an error, please contact support!");
+async function messageExists(message) {
+    return new Promise((resolve, reject) => {
+        try {
+            message.channel.messages.fetch(message.id)
+            .then((fetchedMessage) => {
+                resolve(true);
+            })
+            .catch((err) => {
+                console.log(err);
+                resolve(false);
+            })
+        } catch (err) { resolve(false); }
+
+        resolve(true);
+    });
+}
+
+
 async function getResponse(convo, bot) {
     const response = await bot.openai.createCompletion({
         model: "text-davinci-002",
@@ -18,7 +38,8 @@ async function getResponse(convo, bot) {
       return response;
 }
 
-async function convoManager(clientinp, bot, message) {
+    async function convoManager(clientinp, bot, message) {
+
     //Just in case, make sure it can't be changed
     const client = clientinp;
     const dbo = client.db("DM").collection(message.author.id);
@@ -28,7 +49,7 @@ async function convoManager(clientinp, bot, message) {
             //Check if a conversation already exists
             dbo.find({'_id': {$exists: true}}).toArray((err, docs) => { 
                 if (docs[0] != undefined) {
-                    return message.reply("You're already in a conversation");
+                    return message.channel.send("You're already in a conversation");
                 } else {
                     dbo.insertOne({convo: 'Human: Hello\nAI: Hello'});
                     return message.channel.send('-----Started Conversation-----\nuse _!endconvo_ to end the conversation!\n\n_Disclaimer: Your conversation data is stored for the duration of the conversation to help Selmer Bot better understand what you are saying *then deleted*_\n\n');
@@ -39,7 +60,7 @@ async function convoManager(clientinp, bot, message) {
             dbo.drop();
             return message.channel.send('-----Ended Conversation-----\nSee you next time!');
         } else {
-            return message.reply('UNUSABLE DM COMMAND DETECTED');
+            return message.channel.send('UNUSABLE DM COMMAND DETECTED');
         }
     } else {
         dbo.find({convo: {$exists: true}}).toArray(async function (err, docs) {
@@ -64,7 +85,15 @@ async function convoManager(clientinp, bot, message) {
             dbo.updateOne(doc, {$set: {convo: convo}});
             response = response.replaceAll('AI: ', '').replaceAll('AI:\n', '');
 
-            message.reply(response);
+            //Very buggy so I'm adding this for now
+            message.channel.send(response);
+
+            //Note: Work with the following later
+            /* messageExists(message).then((e) => {
+                console.log(e);
+                if (e) { return message.reply(response); }
+                message.channel.send(response);
+            }) */
         });
     }
 }

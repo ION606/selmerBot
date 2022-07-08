@@ -101,7 +101,7 @@ fs.readdirSync('./commands')
            const command = require(`./commands/${dir}/${file}`);
            bot.commands.set(command.name, command);
         });
-      } else { console.log(dir); }
+      }
   });
 
 
