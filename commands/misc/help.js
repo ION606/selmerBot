@@ -38,6 +38,10 @@ module.exports ={
             }
         });
 
+        //Uses a different format, only the server owner can use it
+        temp += '_setup_ - ***SERVER OWNER ONLY*** - use _!setup help_\n';
+
+        
         temp += `\n_(remember to use '${bot.prefix}' before the command!)_`;
         message.channel.send(temp);
     }

@@ -190,7 +190,7 @@ function in_game_redirector(bot, interaction, threadname, doc, client, mongouri,
     let turn = doc.turn;
     const user1 = doc[turn];
     const user2 = doc[Number(!turn)];
-    const db = client.db(interaction.guildId + "[ECON]");
+    const db = client.db(interaction.guildId);
     const dbo = db.collection(user1);
     const other = db.collection(user2);
     const thread = interaction.channel;
@@ -241,7 +241,7 @@ module.exports ={
 //#endregion
 
         client.connect(err => {
-            const db = client.db(String(server) + "[ECON]");
+            const db = client.db(String(server));
             const dbo = db.collection(id);
             if (err) { return console.log(err); }
 

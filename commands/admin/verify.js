@@ -1,6 +1,9 @@
-function checkRole(message, args) {
-    let role = args[0];
-    if (message.member.hasPermission('ADMINISTRATOR')) { return true; }
+function checkRole(bot, guild, userId) {
+    const role = guild.roles.cache.find((role) => { return (role.name == 'Selmer Bot Commands'); })
+    const user = guild.members.cache.get(userId);
+
+    return (user.roles.cache.get(role.id) || user.id == guild.ownerId || bot.inDebugMode);
+
 
     /*Maybe implement this later, useless for now
     const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -20,4 +23,4 @@ function checkRole(message, args) {
 
 
 
-module.exports = {name: 'verify', checkRole}
+module.exports = { checkRole }

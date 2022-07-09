@@ -19,7 +19,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                     const id = result[0];
                     const doc = result[1];
                     const threadname = doc.thread;
-                    const dbo = client.db(interaction.guildId + '[ECON]').collection(id);
+                    const dbo = client.db(interaction.guildId).collection(id);
 
                     dbo.find({ 'state': {$exists: true} }).toArray(async function (err, docs) {
                         if (interaction.user.id == id) {
@@ -78,7 +78,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 current_user.then(function(result) {
                     const doc = result[1];
                     const threadname = doc.thread;
-                    const dbo = client.db(interaction.guildId + '[ECON]').collection(id);
+                    const dbo = client.db(interaction.guildId).collection(id);
 
                     dbo.find({ 'state': {$exists: true} }).toArray(async function (err, docs) {
                         if (interaction.user.id == id) {

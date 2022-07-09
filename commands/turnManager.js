@@ -56,7 +56,7 @@ function changeTurn(client, bot, interaction) {
             }
             
 
-            const other_dbo = client.db(interaction.member.guild.id + '[ECON]').collection(id);
+            const other_dbo = client.db(interaction.member.guild.id).collection(id);
 
             other_dbo.find({'state': {$exists: true}}).toArray((err, docs) => {
                 //If the person was prone, skip their turn

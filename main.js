@@ -1,3 +1,4 @@
+//#region imports
 const { Client, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const Discord = require('discord.js');
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -11,7 +12,10 @@ const { welcome } = require('./commands/admin/welcome.js');
 const { handle_interaction } = require('./commands/interactionhandler.js');
 const { handle_dm } = require('./commands/dm_handler');
 const { devCheck } = require('./commands/dev only/devcheck.js');
+const { moderation_handler } = require('./commands/admin/moderation.js');
 const { exit } = require('process');
+//#endregion
+
 const BASE_LVL_XP = 20;
 
 
@@ -180,12 +184,15 @@ bot.on('interactionCreate', async interaction => {
 
 //Add the bot to a server setup
 bot.on("guildCreate", guild => {
-    guild.roles.create({ name: 'Selmer Bot Mod' });
+    if (guild.roles.cache.find((role) => { return (role.name == 'Selmer Bot Commands'); }) == undefined) {
+        guild.roles.create({ name: 'Selmer Bot Commands' });
+    }
+    
 
     //const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
     const server = bot.guilds.cache.get(guild.id);
     const owner = server.members.fetch(guild.ownerId).then(function(owner) {
-        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Mod_" role.');
+        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Commands_" role.');
         owner.send('To help set up Selmer Bot to work better with your server, use _!setup help_ in a channel Selmer Bot is in!');
     });
 
@@ -195,7 +202,7 @@ bot.on("guildCreate", guild => {
         if (err) { return console.log(err); }
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}]);
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}]);
     });
 
     client.close();
@@ -205,6 +212,7 @@ bot.on("guildCreate", guild => {
 
 //Welcome new members
 bot.on('guildMemberAdd', async (member) => {
+
     //Check for impartial data
     if(member.partial) await member.fetch();
 
@@ -253,10 +261,15 @@ bot.on('messageCreate', (message) => {
     const args = message.content.slice(prefix.length).split(' ');
     const command = args.shift().toLowerCase();
 
+    //Log logable commands then execute them
+    const logable = ['kick', 'ban', 'unban', 'mute', 'unmute', 'timeout'];
+    if (logable.includes(command)) {
+        moderation_handler(bot, message, args, command);
+    }
 
     //Performes the command
     //Admin section
-    if (command == 'reactionrole') { bot.commands.get(command).execute(message, args, Discord, bot); }
+    else if (command == 'reactionrole') { bot.commands.get(command).execute(message, args, Discord, bot); }
 
     else if(bot.commands.has(command) && command != 'ECON') {
         //Database access is required, change the inputs

@@ -33,7 +33,7 @@ function isNum(arg) {
 
 function CreateNewCollection(message, client, server, id, opponent = null, game = null) {
     client.connect(err => {
-        const db = client.db(String(server) + "[ECON]");
+        const db = client.db(String(server));
         const dbo = db.collection(id);
         if (err) { return console.log(err); }
         db.listCollections({name: id})
@@ -312,7 +312,7 @@ module.exports = {
         CreateNewCollection(message, client, server, id);
 
         client.connect(err => {
-            const db = client.db(String(server) + "[ECON]");
+            const db = client.db(String(server));
             const dbo = db.collection(id);
             if (err) { return console.log(err); }
 
