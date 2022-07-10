@@ -1,11 +1,13 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createSubscriptionManual } = require('./API/stripe.js');
+const { pause_start_stop } = require('./misc/playAudio.js');
 
 
 async function handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection) {
     if (interaction.isButton()) {
         const battlecommandlist = ['ATTACK', 'HEAL', 'DEFEND', 'ITEMS', 'ULTIMATE'];
-        const singleCommandGames = ['ttt'];
+        const singleCommandGames = ['ttt']; // Use when you have more single-player games
+        const musicCommandList = ['PLAY', 'PAUSE', 'UNPAUSE', 'STOP'];
 
         const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
         client.connect(async (err) => {
@@ -57,6 +59,8 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                         console.log("It's not your turn!");
                     }
                 });
+            } else if (musicCommandList.indexOf(interaction.customId) != -1) {
+                pause_start_stop(interaction, bot);
             } //else ifs here
         });
 

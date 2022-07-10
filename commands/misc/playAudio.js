@@ -1,7 +1,7 @@
 const pathToFfmpeg = require('ffmpeg-static');
-const { joinVoiceChannel, createAudioResource } = require('@discordjs/voice');
-const { generateDependencyReport } = require('@discordjs/voice');
-const { VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, StreamType } = require('@discordjs/voice');
+// const { joinVoiceChannel, createAudioResource } = require('@discordjs/voice');
+const { VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, StreamType,  joinVoiceChannel, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
+const { MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const play = require('play-dl');
 
 // Leave here to be initialized at the program's start
@@ -10,20 +10,64 @@ const player = createAudioPlayer();
 // Note: Unsure of what this does , but may be related to the play-dl lib (my notes are inconsistent)
 // play.authorization();
 
+function pause_start_stop(interaction, bot) {
+    const command = interaction.customId.toLowerCase();
+    var em = interaction.message.embeds[0];
+    var rows = [new MessageActionRow()];
+
+    if (command == "pause") {
+        rows[0].addComponents(
+            new MessageButton()
+                .setCustomId('UNPAUSE')
+                .setLabel('▶️')
+                .setStyle('SECONDARY'),
+            new MessageButton()
+                .setCustomId('STOP')
+                .setLabel('⏹️')
+                .setStyle('SECONDARY')
+        );
+        
+        em.description = 'IS NOW PAUSED';
+        player.pause();
+
+    } else if (command == "unpause") {
+        rows[0].addComponents(
+            new MessageButton()
+                .setCustomId('PAUSE')
+                .setLabel('⏸️')
+                .setStyle('SECONDARY'),
+            new MessageButton()
+                .setCustomId('STOP')
+                .setLabel('⏹️')
+                .setStyle('SECONDARY')
+        );
+        
+        em.description = 'IS NOW PLAYING';
+
+        player.unpause();
+    } else if (command == "stop") {
+        rows = [];
+        em.description = 'IS NOW STOPPED';
+
+        const connection = getVoiceConnection(interaction.guild.id);
+        
+        player.stop();
+        if (connection) { connection.destroy(); }
+    }
+
+    interaction.update({embeds: [em], components: rows})
+}
+
 
 module.exports = {
     name: "audio",
-    async execute(message, args, Discord, Client, bot) {
+    description: 'Play a song from YouTube, add free!',
+    async execute(message, args, Discord, Client, bot, interaction = null) {
             // message.channel.send("This command has not been set up yet\nSorry!");
             // return;
-            if (args[0] == "play") {
-                if (args.length < 1) {
-                    message.reply("Please specify a function (play, pause, unpause or stop)");
-                    return;
-                } else if (args.length < 2) {
-                    message.reply("Please provide a song url");
-                    return;
-                }
+            if (args.length < 1) {
+                message.reply("Please use the following format _!audio [song name or URL]_");
+                return;
             }
 
             /*
@@ -36,9 +80,10 @@ module.exports = {
                 message.reply("Please join a voice channel before you try this!");
                 return;
             }
-            //Test 930148609406685227
+
             const channel =  bot.channels.cache.get(message.member.voice.channel.id);
-            console.log(message.member.voice.channel.id);
+            // console.log(message.member.voice.channel.id);
+
             const connection = joinVoiceChannel({
                 channelId: channel.id,
                 guildId: channel.guild.id,
@@ -46,59 +91,73 @@ module.exports = {
             });
             
             connection.on(VoiceConnectionStatus.Ready, () => {
-                console.log('Connected to the voice channel!');
+                // console.log('Connected to the voice channel!');
+            });
+        
+            let stream;
+            let yt_info;
+            if (args[0].startsWith("https://")) {
+                if (!args[0].startsWith("https://www.youtube.com/") &&
+                !args[0].startsWith("https://music.youtube.com/")) {
+                    message.reply("This is not a valid YouTube URL");
+                    return;
+                }
+                yt_info = await play.video_info(args[0]);
+                // let stream = await play.stream_from_info(yt_info)
+                stream = await play.stream(args[0]);
+
+                // console.log("Playing from a URL!");
+            } else {
+                yt_info = await play.search(args.join(' '), {
+                    limit: 1
+                });
+
+                stream = await play.stream(yt_info[0].url);
+                yt_info = await play.video_info(yt_info[0].url);
+            }
+
+            const author = {
+                name: "Selmer Bot",
+                url: "",
+                iconURL: bot.user.displayAvatarURL()
+            }
+
+            const newEmbed = new Discord.MessageEmbed()
+            .setColor(' #0F00F0')
+            .setTitle(`${yt_info.video_details.title}`)
+            .setAuthor(author)
+            .setDescription('IS NOW PLAYING')
+            .setURL(yt_info.video_details.url)
+            .setThumbnail(yt_info.video_details.thumbnails[0].url);
+
+            const row = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId('PAUSE')
+                    .setLabel('⏸️')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('STOP')
+                    .setLabel('⏹️')
+                    .setStyle('SECONDARY')
+            );
+
+
+            let resource = createAudioResource(stream.stream, {
+                inputType: stream.type
+            })
+
+            connection.subscribe(player);
+
+            let audio = "em.mp3";
+            // let resource = createAudioResource(join(__dirname, audio));
+            player.play(resource);
+
+            player.on(AudioPlayerStatus.Playing, () => {
+                // console.log('The audio player has started playing!');
             });
             
-            if (args[0] == "play") {
-                let stream;
-                let info = "Playing __***";
-                let yt_info;
-                if (args[1].startsWith("https://")) {
-                    if (!args[1].startsWith("https://www.youtube.com/") &&
-                    !args[1].startsWith("https://music.youtube.com/")) {
-                        message.reply("This is not a valid YouTube URL");
-                        return;
-                    }
-                    yt_info = await play.video_info(args[1]);
-                    // let stream = await play.stream_from_info(yt_info)
-                    stream = await play.stream(args[1]);
+            message.reply({ embeds: [newEmbed], components: [row] });
 
-                    console.log("Playing from a URL!");
-                } else {
-                    yt_info = await play.search(args.slice(1).join(' '), {
-                        limit: 1
-                    });
-
-                    stream = await play.stream(yt_info[0].url);
-                    yt_info = await play.video_info(yt_info[0].url);
-                }
-
-                //Add the video info to the return message
-                info += yt_info.video_details.title + "***__\n";
-                info += "Check it out at " + yt_info.video_details.url + "\n";
-
-
-                let resource = createAudioResource(stream.stream, {
-                    inputType: stream.type
-                })
-
-                connection.subscribe(player);
-
-                let audio = "em.mp3";
-                // let resource = createAudioResource(join(__dirname, audio));
-                player.play(resource);
-    
-                player.on(AudioPlayerStatus.Playing, () => {
-                    console.log('The audio player has started playing!');
-                });
-                message.reply(info);
-            } else if (args[0] == "pause") {
-                player.pause();
-            } else if (args[0] == "unpause") {
-                player.unpause();
-            } else if (args[0] == "stop") {
-                player.stop();
-                connection.destroy();
-            }
-    }
+    }, pause_start_stop
 }

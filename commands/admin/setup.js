@@ -86,7 +86,7 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
             if (args[1] == 'welcome') {
                 temp = 'Use _!setup welcome\\_channel [channel name]_ to set the welcome channel and _!setup welcome\\_message [message]_ to set a welcome message!\n';
             } else if (args[1] == 'logs') {
-                temp = 'To enable logging, use the command _!setup keep\\_logs true_ and _!setup log\\_channel_ to set up the logging channel!\n';
+                temp = 'To enable logging, use the command _!setup keep\\_logs true_ and _!setup log\\_channel_ [channel name] to set the logging channel!\n';
                 temp += 'Use _!setup keep\\_logs false_ to disable logging and _!setup log\\_severity [none, low, medium, high]_ to set the threshold\n';
                 temp += '__Severities:__\n*none* - unmute, unban\n*low* - mute\n*medium* - kick\n*high* - ban\nEvery tier also includes all notifs for ***higher*** tiers (AKA _!setup log\\_severity none_ will log everything from every severity)\n';
             } else { temp = 'Please use the following format: _!setup help [welcome, logs]_\nExample: _!setup help welcome_'; }
