@@ -74,6 +74,9 @@ bot.openai = new OpenAIApi(configuration);
 bot.temptext = '';
 bot.stripe = Stripe(StripeAPIKey);
 
+//The first thing will be an audioPlayer(), the second a queue
+bot.audioData = new Map();
+
 
 //#region MongoDB integration
 //Development support
@@ -95,7 +98,7 @@ const { connect } = require('mongoose');
 // const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js')); // Obsolete?
 
 bot.commands = new Discord.Collection();
-const forbiddenFolders = ['db', 'API', 'dev only'];
+const forbiddenFolders = ['db', 'premium', 'dev only'];
 
 fs.readdirSync('./commands')
   .forEach(dir => {
@@ -104,7 +107,9 @@ fs.readdirSync('./commands')
         .filter(file => file.endsWith('.js'))
         .forEach(file => {
            const command = require(`./commands/${dir}/${file}`);
-           bot.commands.set(command.name, command);
+           if (command.name && command.description) {
+                bot.commands.set(command.name, command);
+           }
         });
       }
   });
@@ -118,9 +123,9 @@ temp_command = require('./commands/games/game.js');
 bot.commands.set('game', temp_command);
 
 //Everything in the API should be handled by specific handler functions
-const chat = require('./commands/API/chat.js');
+const chat = require('./commands/premium/chat.js');
 bot.commands.set('chat', chat);
-const stripeCommands = require('./commands/API/stripe.js');
+const stripeCommands = require('./commands/premium/stripe.js');
 bot.commands.set('premium', stripeCommands);
 
 //#endregion

@@ -1,5 +1,5 @@
-const { convoManager } = require('./API/chat.js');
-const { handleInp } = require('./API/stripe');
+const { convoManager } = require('./premium/chat.js');
+const { handleInp } = require('./premium/stripe');
 const { MongoClient, ServerApiVersion, ConnectionClosedEvent } = require('mongodb');
 
 function handle_dm(message, bot) {

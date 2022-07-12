@@ -3,6 +3,13 @@ const { log, SEVCODES } = require('../log.js');
 const { checkRole } = require('./verify.js');
 
 
+function modHelp() {
+    const l = ['lock', 'unlock', 'kick', 'ban', 'unban', 'mute', 'unmute'];
+
+    return l.join(", ");
+}
+
+
 function kick(guild, user) {
     guild.members.kick(user);
 }
@@ -134,4 +141,7 @@ function moderation_handler(bot, message, args, command) {
     }
 }
 
-module.exports = { moderation_handler }
+module.exports = { 
+    name: 'moderation',
+    moderation_handler, modHelp
+}

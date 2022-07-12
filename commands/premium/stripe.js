@@ -64,9 +64,16 @@ async function createSubscriptionManual(bot, interaction, id, priceID) {
             success_url: billingPortalSession.url,
             cancel_url: "https://linktr.ee/selmerbot"
         });
-    
+
         interaction.editReply(session.url);
-    }).catch((err) => { interaction.editReply(err); })
+    }).catch((err) => { 
+        if (String(typeof(err)) == 'string') {
+            interaction.editReply(err);
+        } else {
+            console.log(err);
+            interaction.editReply("A Stripe error occured! Please contact support ASAP!")
+        }
+     });
 }
 
 
@@ -100,13 +107,20 @@ async function changeSubscriptionManual(bot, message) {
         });
 
     }).then(async (userID) => {
-        const session = await stripe.billingPortal.sessions.create({
+        await stripe.billingPortal.sessions.create({
             customer: userID,
             return_url: "https://linktr.ee/selmerbot",
-        });
-        message.reply(session.url);
+        }).then((session) => {
+            message.reply(session.url);
+        })
     }).catch((err) => {
-        message.reply(err);
+
+        if (String(typeof(err)) == 'string') {
+            message.reply(err);
+        } else {
+            console.log(err);
+            message.reply("A Stripe error occured! Please contact support ASAP!");
+        }
     });
 }
 

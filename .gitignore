@@ -4,5 +4,5 @@ config.json
 *.sqlite
 *.txt
 !spec/LevelsXP.txt
-database.sqlite
+*.sqlite
 temp.js

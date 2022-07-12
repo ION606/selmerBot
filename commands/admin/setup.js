@@ -104,6 +104,6 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
 
 module.exports = {
     name: 'setup',
-    description: 'N/A',
+    description: 'Set up server features',
     execute
 }
