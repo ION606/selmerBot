@@ -160,18 +160,18 @@ function playNext(interaction, bot, message = null) {
 
     //Setup data[1] = {info: yt_info, resource: resource}
     var guildId;
-    if (message) { guildId = message.guild.id; }
-    else { interaction.guildId; }
+    if (message != null) { guildId = message.guild.id; }
+    else { guildId = interaction.guildId; }
 
     let data = bot.audioData.get(guildId);
     const player = data[0];
 
     //Check if the queue is empty
-    if (!data[1][0]) { 
+    if (data[1].length <= 0) { 
         player.stop();
         bot.audioData.delete(guildId);
         if (message) { return true; }
-        else { playStopEmbed(bot, interaction, null, true); }
+        else { return playStopEmbed(bot, interaction, null, true); }
     }
     
 
@@ -435,13 +435,13 @@ module.exports = {
             if (data && data[1]) {
                 //[player, [queue Array]]
                 data[1].push({yt_info: yt_info, resource: resource});
-                bot.audioData.set(channel.guild.id, data);
+                bot.audioData.set(message.guild.id, data);
                 message.reply(`_"${yt_info.video_details.title}" added to queue!_`);
             } else {
                 const player = createAudioPlayer();
                 connection.subscribe(player);
 
-                bot.audioData.set(channel.guild.id, [player, new Array(), null]);
+                bot.audioData.set(message.guild.id, [player, new Array(), null]);
                 player.play(resource);
 
 
