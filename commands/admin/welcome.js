@@ -22,6 +22,7 @@ async function welcome(member, welcomechannel, welcomemessage = null, welcomeban
         
         // const background = new CanvasImport.Image();
         // background.src = arrayBufferToBuffer(data);
+        
 
         // This uses the canvas dimensions to stretch the image onto the entire canvas
         // context.drawImage(background, 0, 0, canvas.width, canvas.height);

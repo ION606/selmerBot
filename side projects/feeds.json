@@ -1,0 +1,24 @@
+{
+    "News": {
+        "NYTimes": {
+            "world": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+            "US": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+            "econ": "https://rss.nytimes.com/services/xml/rss/nyt/Economy.xml",
+            "business": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+            "tech": "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+            "obituaries": "https://rss.nytimes.com/services/xml/rss/nyt/Obituaries.xml"
+        },
+        "Fox": {
+            "LatestHeadlines": "https://moxie.foxnews.com/feedburner/latest.xml",
+            "World": "https://moxie.foxnews.com/feedburner/world.xml",
+            "US": "https://moxie.foxnews.com/feedburner/national.xml",
+            "Tech": "https://moxie.foxnews.com/feedburner/scitech.xml",
+            "Politics": "https://moxie.foxnews.com/feedburner/politics.xml"
+        },
+        "NPR": "https://feeds.npr.org/1001/rss.xml"
+    },
+    "Crime": {
+        "DateLine_NBC": "https://podcastfeeds.nbcnews.com/HL4TzgYC",
+        "CrimeJunkie": "https://feeds.simplecast.com/qm_9xx0g"
+    }
+}

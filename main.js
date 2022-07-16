@@ -84,7 +84,7 @@ let mongouritemp;
 if (process.env.MONGODB_URI) {
     mongouritemp = process.env.MONGODB_URI;
 } else {
-    mongouritemp = require('./config.json');
+    mongouritemp = require('./config.json').mongooseURI;
 }
 const mongouri = mongouritemp;
 bot.mongouri = mongouri;
@@ -98,7 +98,7 @@ const { connect } = require('mongoose');
 // const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js')); // Obsolete?
 
 bot.commands = new Discord.Collection();
-const forbiddenFolders = ['db', 'premium', 'dev only'];
+const forbiddenFolders = ['db', 'dev only']; //premium, 
 
 fs.readdirSync('./commands')
   .forEach(dir => {
@@ -108,7 +108,7 @@ fs.readdirSync('./commands')
         .forEach(file => {
            const command = require(`./commands/${dir}/${file}`);
            if (command.name && command.description) {
-                bot.commands.set(command.name, command);
+                bot.commands.set(command.name.toLowerCase(), command);
            }
         });
       }
@@ -123,10 +123,12 @@ temp_command = require('./commands/games/game.js');
 bot.commands.set('game', temp_command);
 
 //Everything in the API should be handled by specific handler functions
-const chat = require('./commands/premium/chat.js');
-bot.commands.set('chat', chat);
-const stripeCommands = require('./commands/premium/stripe.js');
-bot.commands.set('premium', stripeCommands);
+// const chat = require('./commands/premium/chat.js');
+// bot.commands.set('chat', chat);
+// const stripeCommands = require('./commands/premium/stripe.js');
+// bot.commands.set('premium', stripeCommands);
+// const 
+// bot.commands.set('RSS', )
 
 //#endregion
 

@@ -6,3 +6,4 @@ config.json
 !spec/LevelsXP.txt
 *.sqlite
 temp.js
+trivia.js

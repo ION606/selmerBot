@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createSubscriptionManual } = require('./premium/stripe.js');
 const { pause_start_stop, playNext, showQueue } = require('./misc/playAudio.js');
+// const { RSSInteractionHandler } = require('./premium/rssFeed.js');
 
 
 async function handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection) {
@@ -69,7 +70,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                     pause_start_stop(interaction, bot);
                 }
                 
-            } //else ifs here
+            } //Button else ifs here
         });
 
         client.close();
@@ -129,9 +130,9 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
 
                 //Handle the interaction here
             }
-        }
-        
-        //menu else ifs here
+        } /*else if (interaction.customId.indexOf('RSS') != -1) {
+            RSSInteractionHandler(bot, interaction);
+        }*/  //menu else ifs here
     } //other selection types here
 }
 

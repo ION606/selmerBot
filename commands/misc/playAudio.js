@@ -211,7 +211,8 @@ function fromMessage(bot, command, msg) {
     const message = msg.channel.messages.cache.get(data[2]);
     // console.log(message);
 
-    var em = message.embeds[0];
+    var em;
+    if (message.embeds) { em = message.embeds[0]; }
     var rows;
 
     if (command == 'stop') {

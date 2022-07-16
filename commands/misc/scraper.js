@@ -12,13 +12,16 @@ module.exports ={
                 const html = response.data;
                 const $ = cheerio.load(html);
                 //lyrics = $('.para_row').text();
+
                 const haste = await hastebin(html, { extension: "txt" });
-               message.channel.send(haste);
+                message.channel.send(haste);
               //  console.log(lyrics);
               })
               .catch(function(err) {
                 if (err.message.indexOf('The "url" argument must be of type string') != -1) {
                   message.reply("The URL should be a string!");
+                } else if (err.code == 'ERR_BAD_REQUEST') {
+                  message.reply("404 link not valid!")
                 } else {
                   message.reply("Oops! There's been an error");
                 }
