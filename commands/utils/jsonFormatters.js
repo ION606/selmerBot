@@ -72,3 +72,4 @@ function mapToTableRecursive(inp, layer = 1) {
 
 
 
+module.exports = { jsonToMapRecursive, mapToTableRecursive }

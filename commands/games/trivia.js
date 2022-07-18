@@ -1,0 +1,157 @@
+const request = require('request');
+const fetch = require('node-fetch');
+const categoriesJSON = require('./trivia_categories.json').trivia_categories;
+const { decode } = require('html-entities');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+
+
+const categories = new Map();
+for (i in categoriesJSON) {
+    categories.set(categoriesJSON[i].name, categoriesJSON[i].id);
+}
+// const { jsonToMapRecursive, mapToTableRecursive } = require('../utils/jsonFormatters.js');
+
+
+function changeDB(bot, message, m) {
+    try {
+        const client = new MongoClient(bot.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+        client.connect(err => {
+            const dbo = client.db(message.guild.id).collection('trivia');
+            //Game Over
+            if (m == null) {
+                return dbo.deleteOne({ channel: message.channel.id });
+            }
+
+            dbo.findOne({ channel: message.channel.id }).then((doc) => {
+                if (doc) {
+                    dbo.updateOne({ channel: message.channel.id }, {$set: { m: Object.fromEntries(m) }});
+                } else{
+                    dbo.insertOne({ channel: message.channel.id, m: Object.fromEntries(m) });
+                }
+            });
+            
+        });
+
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+
+
+
+
+/**
+ * @param {*} message 
+ * @param {Map<string, object>} m 
+ * @param {int} time 
+ */
+function startTrivia(message, m, time, bot) {
+    const obj = m.values().next().value;
+    const question = obj.question;
+    const answer = obj.answer;
+    console.log(answer);
+
+    const filter = (response) => {
+        // return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());
+        return (response.content.toLowerCase() == answer.toLowerCase());
+    };
+    
+    message.reply({ content: question, fetchReply: true })
+        .then(() => {
+            //time: 1000 = 1 second
+            message.channel.awaitMessages({ filter, max: 10, time: time }) // , errors: ['time']
+                .then((collected) => {
+                    if (collected.size > 0) {
+                        message.reply(`${collected.first().author} got the correct answer (${answer})!`);
+                    } else {
+                        message.reply('Tsk Tsk, looks like nobody got the answer this time.');
+                    }
+
+                    changeDB(bot, message, null);
+                })
+                .catch((collected) => {
+                    console.log(collected);
+                    message.reply('Tsk Tsk, looks like nobody got the answer this time.');
+                    changeDB(bot, message, null);
+                });
+        });
+}
+
+
+//Add shuffle button
+
+module.exports = {
+    name: 'trivia',
+    description: 'Play a game of Trivia with yourself or others! - (use _trivia help_)',
+    async execute(message, args, Discord, Client, bot) {
+        const difficult = ['easy', 'medium', 'hard'];
+        let inputs = ['easy', ''];
+
+        if (args[0] && difficult.includes(args[0].toLowerCase())) {
+            inputs[0] = args[0].toLowerCase();
+        } else if (args[0] == 'help') {
+            let temp = `Use ${bot.prefix}trivia [difficulty (easy, medium, hard)] [topic] [time]\n`;
+            temp += '**__Trivia Categories__**\n';
+            m.forEach((val, key) => {
+                temp += `_${key}_\n`;
+            })
+            temp += '_Please copy and paste the FULL NAME if you want to use a category';
+
+            return message.reply(temp);
+        }
+
+        if (args[1] && Array.from(categories.keys()).includes(args[1])) {
+            inputs[1] = categories.get(args[1]);
+        }
+
+        // Get all categories mapped to their ids
+        // const a = await fetch('https://opentdb.com/api_category.php');
+        // const json = await a.json();
+        // console.log(json);
+        
+        var url = `https://opentdb.com/api.php?amount=${5}&difficulty=${inputs[0]}&type=multiple`;
+        if (inputs[1] != '') {
+            url += `&category=${inputs[1]}`;
+        }
+
+        request(url, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                // const m = new Map(body);
+                let s = body.replace('{"response_code":0,"results":[', '');
+                s = s.substring(0, s.length - 2);
+                let queries = s.split('},');
+
+                const m = new Map();
+                let i = 0;
+
+                queries.forEach((query, ind) => {
+                    query = query.substring(1, s.length - 2);
+                    if (query.endsWith('}')) { query = query.substring(0, s.length - 2); }
+
+                    // console.log(decode(query));
+                    query = decode(query);
+
+                    //Get the answer (may have "" in it)
+                    const question = query.substring(query.indexOf('question":') + 10, query.indexOf('","correct_answer'));
+                    // console.log(`Q: ${question}\n\nActual: ${query}\n---------------------------------------`);
+
+                    let q = query.split('","');
+                    // queries[ind] = q;
+                                        
+                    q[5] = q[5].split(':[')[1];
+
+                    let obj = { question: q[3].split(':"')[1], answer: q[4].split(':"')[1], incorrect: [ q[5].replaceAll('"', ''), q[6].replaceAll('"', ''), q[7].replaceAll(']}', '').replaceAll(']', '').replaceAll('"', '') ] }
+                    m.set(i, obj);
+                    i ++;
+                });
+
+                const time = args[2] || (difficult[0].indexOf(inputs[0]) + 1) * 10000;
+                changeDB(bot, message, m);
+                startTrivia(message, m, time, bot);
+            }
+        })
+
+
+    }
+}
