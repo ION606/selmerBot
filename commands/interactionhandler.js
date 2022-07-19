@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createSubscriptionManual } = require('./premium/stripe.js');
 const { pause_start_stop, playNext, showQueue } = require('./misc/playAudio.js');
+const { resolveComplaint } = require('./dev only/submitcomplaint.js');
 // const { RSSInteractionHandler } = require('./premium/rssFeed.js');
 
 
@@ -70,6 +71,8 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                     pause_start_stop(interaction, bot);
                 }
                 
+            } else if (interaction.customId == 'DEBUGURGENT' || interaction.customId == 'DEBUGDONE') {
+                resolveComplaint(interaction);
             } //Button else ifs here
         });
 

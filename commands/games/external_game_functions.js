@@ -1,6 +1,7 @@
 //@ts-check
 const { addxp, STATE, BASE } = require("../db/econ");
 const turnManger = require('../turnManager.js');
+const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 
 //#region game lose/win
@@ -8,7 +9,11 @@ function loseGame(user_dbo, xp_collection, message, bot = null) {
     return new Promise(function(resolve, reject) {
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
-        if (doc == undefined) { return message.reply("Oops! There's been an error! Please contact support if this problem persists!"); }
+        if (doc == undefined) { 
+            message.reply("Oops! There's been an error, click the ✅ to report this!");
+            addComplaintButton(bot, message);
+            return;
+        }
         if (doc.game == null) { return message.reply("You're not even in a game and you're trying to quit! Sad..."); }
 
         var addbal;
@@ -49,7 +54,7 @@ function winGame(client, bot, db, user_dbo, xp_collection, message) {
         }
 
         //Delete the bot's record of the game
-        client.db('B|S' + bot.user.id).collection(user_dbo.s.namespace.db.substr(0, user_dbo.s.namespace.db.length - 6)).drop();
+        client.db('B|S' + bot.user.id).collection(message.guild.id).drop();
         
 
         //Update the player with xp

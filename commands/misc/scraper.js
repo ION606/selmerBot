@@ -1,4 +1,5 @@
 const hastebin = require("hastebin-gen");
+const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 module.exports ={
     name: "scrape",
@@ -23,10 +24,10 @@ module.exports ={
                 } else if (err.code == 'ERR_BAD_REQUEST') {
                   message.reply("404 link not valid!")
                 } else {
-                  message.reply("Oops! There's been an error");
+                  message.reply("Oops! There's been an error, click the ✅ to report this!");
+                  addComplaintButton(bot, message);
+                  console.log(err);
                 }
-
-                console.log(err);
               });
     }
 }

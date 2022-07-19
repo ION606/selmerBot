@@ -25,6 +25,7 @@ const BASE_LVL_XP = 20;
 let token;
 let IDM = false;
 let home_server;
+let debug_channel;
 
 let MLAIKEY;
 let StripeAPIKey;
@@ -33,14 +34,18 @@ if (process.env.token != undefined) {
     //Use "setx NAME VALUE" in the local powershell terminal to set
     token = process.env.token;
     home_server = process.env.home_server;
+    debug_channel = process.env.debug_channel;
     MLAIKEY = process.env.MLAIKEY;
     StripeAPIKey = process.env.StripeAPIKey;
 } else {
     token = require('./config.json').token;
     home_server = require('./config.json').home_server;
-    IDM = true;
+    debug_channel = require('./config.json').debug_channel;
+
     MLAIKEY = require('./config.json').MLAIKEY;
     StripeAPIKey = require('./config.json').StripeAPIKey;
+    // { token, home_server, debug_channel, MLAIKEY, StripeAPIKey } = require('./config.json'); // Doesn't work
+    IDM = true;
 }
 
 //#endregion
@@ -66,6 +71,7 @@ bot.prefix = new String;
 bot.prefix = prefix;
 bot.inDebugMode = IDM;
 bot.home_server = home_server;
+bot.debug_channel = debug_channel;
 
 const configuration = new Configuration({
     apiKey: MLAIKEY,
@@ -256,9 +262,14 @@ bot.on('messageCreate', (message) => {
     } else if (message.content.indexOf('!spam_collection') != -1) {
         //Handle spam collection/Dev commands
         return devCheck(message, bot);
+    } else if (message.type === "CHANNEL_PINNED_MESSAGE") {
+        //Debug log stuff
+        if (message.guild.id == bot.home_server && message.channel.id == bot.debug_channel) {
+            message.delete();
+        }
     }
 
-    //Special case, testing server (still need the emojis)
+    //Special case, testing server (still need the emojis and error logging)
     if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
 
     //COMMAND AREA

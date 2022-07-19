@@ -108,7 +108,7 @@ function postActionBar(interaction, user_dbo, board, won, initial = false) {
         }
     }
 
-    console.log(componentlist);
+    // console.log(componentlist);
 
     if (initial) {
         interaction.send({ content: `Your turn <@${user_dbo.s.namespace.collection}>!`, components: componentlist });
@@ -124,12 +124,15 @@ async function handle(client, db, dbo, other, bot, thread, command, doc, interac
         let board = ["", "", "", "", "", "", "", "", ""];
         postActionBar(thread, dbo, board, false,true);
     } else {
+
         //Change the board
         let square = Number(interaction.customId.split('|')[1]);
         let symbol = doc.symbols[doc.turn];
         let board = doc.board;
         board[square] = symbol;
-        client.db('B|S' + bot.user.id).collection(dbo.s.namespace.db.substr(0, dbo.s.namespace.db.length - 6)).updateOne({'board': {$exists: true}}, {$set: {board: board}});
+        const gamedbo = client.db('B|S' + bot.user.id).collection(interaction.guildId);
+
+        gamedbo.updateOne({$or: [ {0: interaction.user.id}, {1: interaction.user.id} ], 'board': {$exists: true}}, {$set: {board: board}});
 
         //Check if the game is over
         let won = isTerminal(board);

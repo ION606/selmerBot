@@ -5,6 +5,7 @@ var FeedParser = require('feedparser');
 const fetch = require('node-fetch');
 const { VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, StreamType,  joinVoiceChannel, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
 const play = require('play-dl');
+const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 const hastebin = require("hastebin-gen");
 const { simpleCast } = require('./RSSHandlers/simplecast.js')
@@ -154,6 +155,8 @@ async function getAndFormatRSS(bot, message, user, inp) {
     
     feedparser.on('error', function (error) {
       // always handle errors
+      addComplaintButton(bot, message);
+      console.log(error);
     });
     
     const items = new Array();

@@ -6,6 +6,7 @@ https://glitch.com/edit/#!/selmer-bot-listener
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
+const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 
 //Called from the dropdown menu
@@ -71,7 +72,8 @@ async function createSubscriptionManual(bot, interaction, id, priceID) {
             interaction.editReply(err);
         } else {
             console.log(err);
-            interaction.editReply("A Stripe error occured! Please contact support ASAP!")
+            interaction.editReply("A Stripe error occured! Please click the ✅ to report this ASAP!");
+            addComplaintButton(bot, interaction.message);
         }
      });
 }
@@ -119,7 +121,8 @@ async function changeSubscriptionManual(bot, message) {
             message.reply(err);
         } else {
             console.log(err);
-            message.reply("A Stripe error occured! Please contact support ASAP!");
+            message.reply("A Stripe error occured! Please click the ✅ to report this ASAP!");
+            addComplaintButton(bot, interaction.message);
         }
     });
 }

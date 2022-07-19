@@ -6,6 +6,7 @@ let ecoimport = require("../db/econ.js");
 //#region Game Imports
 const battle = require("./battle.js");
 const ttt = require('./tictactoe.js');
+const trivia = require('./trivia.js');
 
 //#endregion
 
@@ -147,7 +148,7 @@ function equip(message, args, command, dbo, bot, shop) {
         
         if (doc.game != null) {
             ret = true;
-            console.log(doc.game);
+            // console.log(doc.game);
             return message.reply('You can\'t equip while in a game!');
         }
 
@@ -357,6 +358,8 @@ module.exports ={
 
 //#region game-specific commands
                 else {
+                    if (command == undefined) { return message.reply("Please specify a game or use _!game help_"); }
+
                     //Make change to new name if necessary
                     if (command.replaceAll(" ", "").toLowerCase() == 'tictactoe') { command = 'Tic Tac Toe'; }
                     
@@ -377,12 +380,14 @@ module.exports ={
                         }
                         
                         message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"Tic Tac Toe"_. To accept, please reply to this message with _!game accept_`);
+                    } else if (game == 'trivia' || command == 'trivia') {
+                        trivia.execute(message, args, Discord, client, bot);
                     }
+
 
                     //Catch statement (invalid command)
                     else {
-                        if (command == undefined) { message.reply("Please specify a game or use _!game help_"); }
-                        else { message.reply(`'!game ${command}' is not a command!`); }
+                        message.reply(`'${bot.prefix}game ${command}' is not a command!`);
                     }
                 }
 //#endregion

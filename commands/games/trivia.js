@@ -47,7 +47,15 @@ function changeDB(bot, message, m) {
  * @param {int} time 
  */
 function startTrivia(message, m, time, bot) {
-    const obj = m.values().next().value;
+    var iter = m.values().next();
+    var obj = iter.value;
+
+    //Get rid of the "answers required" ones
+    while (obj.question.toLowerCase().indexOf('which of these') != -1 && obj.question.toLowerCase().indexOf('which of the following') != -1) {
+        iter = iter.next();
+        obj = iter.value;
+    }
+
     const question = obj.question;
     const answer = obj.answer;
     console.log(answer);
@@ -57,8 +65,11 @@ function startTrivia(message, m, time, bot) {
         return (response.content.toLowerCase() == answer.toLowerCase());
     };
     
-    message.reply({ content: question, fetchReply: true })
+    message.reply({ content: `${question}\n(Type your answers below!)`, fetchReply: true })
         .then(() => {
+            const timeList = ['🔟', '9️⃣', '8️⃣', '7️⃣', '6️⃣', '5️⃣', '4️⃣', '3️⃣', '2️⃣', '1️⃣', '0️⃣' ];
+            var i = 0;
+            const intId = setInterval(() => { if (i < timeList.length) { message.react(timeList[i]); i++ } }, Math.round(time/11));
             //time: 1000 = 1 second
             message.channel.awaitMessages({ filter, max: 10, time: time }) // , errors: ['time']
                 .then((collected) => {
@@ -68,22 +79,23 @@ function startTrivia(message, m, time, bot) {
                         message.reply('Tsk Tsk, looks like nobody got the answer this time.');
                     }
 
-                    changeDB(bot, message, null);
+                    // changeDB(bot, message, null);
+                    clearInterval(intId);
                 })
                 .catch((collected) => {
                     console.log(collected);
                     message.reply('Tsk Tsk, looks like nobody got the answer this time.');
-                    changeDB(bot, message, null);
+                    // changeDB(bot, message, null);
+                    clearInterval(intId);
                 });
         });
 }
 
 
-//Add shuffle button
+//Add shuffle button?
 
 module.exports = {
     name: 'trivia',
-    description: 'Play a game of Trivia with yourself or others! - (use _trivia help_)',
     async execute(message, args, Discord, Client, bot) {
         const difficult = ['easy', 'medium', 'hard'];
         let inputs = ['easy', ''];
@@ -93,7 +105,7 @@ module.exports = {
         } else if (args[0] == 'help') {
             let temp = `Use ${bot.prefix}trivia [difficulty (easy, medium, hard)] [topic] [time]\n`;
             temp += '**__Trivia Categories__**\n';
-            m.forEach((val, key) => {
+            categories.forEach((val, key) => {
                 temp += `_${key}_\n`;
             })
             temp += '_Please copy and paste the FULL NAME if you want to use a category';
@@ -110,7 +122,7 @@ module.exports = {
         // const json = await a.json();
         // console.log(json);
         
-        var url = `https://opentdb.com/api.php?amount=${5}&difficulty=${inputs[0]}&type=multiple`;
+        var url = `https://opentdb.com/api.php?amount=${3}&difficulty=${inputs[0]}&type=multiple`;
         if (inputs[1] != '') {
             url += `&category=${inputs[1]}`;
         }
@@ -146,12 +158,12 @@ module.exports = {
                     i ++;
                 });
 
-                const time = args[2] || (difficult[0].indexOf(inputs[0]) + 1) * 10000;
-                changeDB(bot, message, m);
+                const time = args[2] || (difficult.indexOf(inputs[0]) + 1) * 10000;
+
+                // console.log(m, time);
+                // changeDB(bot, message, m);
                 startTrivia(message, m, time, bot);
             }
-        })
-
-
+        });
     }
 }

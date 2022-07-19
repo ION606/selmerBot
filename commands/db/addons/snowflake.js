@@ -12,27 +12,31 @@ function convertSnowflakeToDate(snowflake, epoch = DISCORD_EPOCH) {
 
 // Validates a snowflake ID string and returns a JS Date object if valid
 function validateSnowflake(snowflake, epoch) {
-	if (!Number.isInteger(+snowflake)) {
-		throw new Error(
-			"That doesn't look like a snowflake. Snowflakes contain only numbers."
-		)
+		try {
+		if (!Number.isInteger(+snowflake)) {
+			throw new Error(
+				"That doesn't look like a snowflake. Snowflakes contain only numbers."
+			)
+		}
+
+		if (snowflake < 4194304) {
+			throw new Error(
+				"That doesn't look like a snowflake. Snowflakes are much larger numbers."
+			)
+		}
+
+		const timestamp = convertSnowflakeToDate(snowflake, epoch)
+
+		if (Number.isNaN(timestamp.getTime())) {
+			throw new Error(
+				"That doesn't look like a snowflake. Snowflakes have fewer digits."
+			)
+		}
+
+		return timestamp
+	} catch(err) {
+		console.log(err);
 	}
-
-	if (snowflake < 4194304) {
-		throw new Error(
-			"That doesn't look like a snowflake. Snowflakes are much larger numbers."
-		)
-	}
-
-	const timestamp = convertSnowflakeToDate(snowflake, epoch)
-
-	if (Number.isNaN(timestamp.getTime())) {
-		throw new Error(
-			"That doesn't look like a snowflake. Snowflakes have fewer digits."
-		)
-	}
-
-	return timestamp
 }
 
 module.exports = { convertSnowflakeToDate, validateSnowflake }

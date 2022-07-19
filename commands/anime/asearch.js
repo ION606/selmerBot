@@ -13,9 +13,10 @@ module.exports = {
             }
         } else { name = args[0]; }
 
-        if (args[args.length - 1] != args[args.length - 1] != '~fancy' && args[args.length - 1] != '~summary' && args[args.length - 1] != '~stats') { args.push('~stats'); }
+        if (args[args.length - 1] != '~fancy' && args[args.length - 1] != '~summary' && args[args.length - 1] != '~stats') { args.push('~stats'); }
 
-        scraper.getInfoFromName(name).then((data) => {
+        //When set to true, getInfoFromName.getBestMatch did not, in fact, return the best results
+        scraper.getInfoFromName(name, false).then((data) => {
             try {
                 if (args[args.length - 1] == '~stats') {
                     const newEmbed = new Discord.MessageEmbed()
@@ -51,7 +52,14 @@ module.exports = {
             } catch (err) {
                 if (err.message.indexOf('MessageEmbed field values must be non-empty strings') != -1) {
                     message.reply(`Insufficient information on website!\nThe page can be found here: ${data.url}`);
+                } else {
+                    message.reply("Uh oh, an unknown error occured, click the ✅ to report this!");
+                    
+                    const { addComplaintButton } = require('../dev only/submitcomplaint');
+                    addComplaintButton(bot, message);
                 }
+
+                console.log(err);
             }
         
         });
