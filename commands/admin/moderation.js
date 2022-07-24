@@ -16,16 +16,16 @@ function kick(guild, user) {
 
 
 async function toggle_ban(guild, message, args, ban, reason) {
-    var user = args[0];
-    let i = 0;
-    while (user.indexOf('#') == -1) {
-        user += args[i];
-        i++
-    }
 
     if (ban) {
-        guild.members.ban(user);
+        guild.members.ban(args);
     } else {
+        var user = args[0];
+        let i = 0;
+        while (user.indexOf('#') == -1) {
+            user += args[i];
+            i++
+        }
         return new Promise((resolve, reject) => {
             message.guild.bans.fetch().then((users) => {
                 const userObj = users.filter((u) => {

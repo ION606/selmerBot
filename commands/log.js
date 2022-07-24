@@ -23,6 +23,7 @@ function log(bot, message, command, mentioned, reason, severity) {
             if (!doc) { return message.channel.send("Server logs not set up yet!"); }
             const channel = message.guild.channels.cache.get(doc.logchannel);
 
+            if (!channel) { return console.log("There is no specified log channel!"); }
             //Check severity threshold
             if (SEVCODES[doc.severity] < severity) { return; }
             
