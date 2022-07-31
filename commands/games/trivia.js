@@ -14,8 +14,7 @@ for (i in categoriesJSON) {
 
 function changeDB(bot, message, m) {
     try {
-        const client = new MongoClient(bot.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-        client.connect(err => {
+        bot.mongoconnection.then(client => {
             const dbo = client.db(message.guild.id).collection('trivia');
             //Game Over
             if (m == null) {

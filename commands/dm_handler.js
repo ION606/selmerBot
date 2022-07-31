@@ -8,9 +8,8 @@ function handle_dm(message, bot) {
     if (!message.content.startsWith('!') || message.content.split(' ')[0] == '!startconvo' || message.content.split(' ')[0] == '!endconvo') {
         const member = bot.guilds.cache.get(bot.home_server).members.cache.get(message.author.id);
 
-        const client = new MongoClient(bot.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-        client.connect(async (err) => {
-            if (err) { return console.log(err); }
+        bot.mongoconnection.then(async (client) => {
+            // if (err) { return console.log(err); }
 
             const dbo = client.db('main').collection('authorized');
             dbo.find({id: message.author}).toArray((err, docs) => {
@@ -24,7 +23,6 @@ function handle_dm(message, bot) {
             });
         });
 
-        client.close();
     } else if (message.content.indexOf('!premium') != -1) {
         handleInp(bot, message);
     } else {

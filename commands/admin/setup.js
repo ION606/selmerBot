@@ -18,18 +18,17 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
         return message.reply('Only the server owner can do this!');
     }
 
-    // @ts-ignore
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    if (client.writeConcern || client.writeConcern) { 
-        client.close();
-        return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
-    }
+    // // @ts-ignore
+    // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+    // if (client.writeConcern || client.writeConcern) { 
+    //     client.close();
+    //     return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
+    // }
 
-    //Initialize
-    CreateNewCollection(message, client, server, owner.user.id);
-
-    client.connect(err => {
-        if (err) { return console.log(err); }
+    bot.mongoconnection.then(async (client) => {
+        // if (err) { return console.log(err); }
+        //Initialize
+        CreateNewCollection(message, client, server, owner.user.id);
 
         const db = client.db(server);
         const dbo = db.collection('SETUP');
@@ -94,8 +93,6 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
             message.reply(temp);
         }
     });
-
-    client.close();
 }
 
 

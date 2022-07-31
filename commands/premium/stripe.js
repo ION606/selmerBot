@@ -1,6 +1,6 @@
 /*
 -----WEBHOOKS ARE MONITORED AND PROCESSED HERE-----
-https://glitch.com/edit/#!/selmer-bot-listener
+https://selmer-bot-listener.ion606.repl.co
 --------------------------------------------------
 */
 
@@ -17,17 +17,17 @@ async function createSubscriptionManual(bot, interaction, id, priceID) {
     //Error Checking (unlikely, but just in case)
     if (!id) { console.log('....What? How?'); return interaction.editReply("Uh oh, something happened with the Stripe Discord ID check, please contact support!"); }
 
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+    // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
     new Promise(async function(resolve, reject) {
-        client.connect(async (err) => {
-            if (err) { return console.log(err); }
+        bot.mongoconnection.then(async (client) => {
+            // if (err) { return console.log(err); }
 
             const dbo = client.db('main').collection('authorized');
             await dbo.findOne({'discordID': id}).then(async (doc) => {
                 var userID;
 
                 if (doc != undefined) {
-                    client.close();
+                    // client.close();
                     
                     reject(`An account with the tag <@${id}> already exists!`);
                 } else {
@@ -37,7 +37,7 @@ async function createSubscriptionManual(bot, interaction, id, priceID) {
                     userID = stripeUser.id;
                     
                     //Add to the database (I have to wait for the insertion)
-                    await dbo.insertOne({stripeID: userID, discordID: id, paid: false, startDateUTC: null, tier: 0}).then(() => { client.close(); resolve(userID); });
+                    await dbo.insertOne({stripeID: userID, discordID: id, paid: false, startDateUTC: null, tier: 0}).then(() => { /*client.close();*/ resolve(userID); });
                 }
             });
         });
@@ -87,10 +87,10 @@ async function changeSubscriptionManual(bot, message) {
     //Just in case
     if (!id) { return console.log('....What? How?'); }
 
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+    // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
     new Promise(async function(resolve, reject) {
-        client.connect(async (err) => {
-            if (err) { return console.log(err); }
+        bot.mongoconnection.then(async (client) => {
+            // if (err) { return console.log(err); }
 
             const dbo = client.db('main').collection('authorized');
             await dbo.findOne({'discordID': id}).then(async (doc) => {
@@ -98,11 +98,10 @@ async function changeSubscriptionManual(bot, message) {
 
                 if (doc != undefined) {
                     userID = doc.stripeID;
-                    client.close();
+                    // client.close();
                     resolve(userID);
                 } else {
-                    client.close();
-
+                    // client.close();
                     reject(`No user with the ID of <@${message.author.id}>`);
                 }
             });

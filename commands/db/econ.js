@@ -32,22 +32,18 @@ function isNum(arg) {
 
 
 function CreateNewCollection(message, client, server, id, opponent = null, game = null) {
-    client.connect(err => {
-        const db = client.db(String(server));
-        const dbo = db.collection(id);
-        if (err) { return console.log(err); }
-        db.listCollections({name: id})
-        .next(function(err, collinfo) {
-            if (err) { return console.log(err); }
-            if (!collinfo) {
-                message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
-                let hp_mp = {maxhp: BASE.HP, hp: BASE.HP, maxmp: BASE.MP, mp: BASE.MP}
-                dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hpmp: hp_mp, game: game, gamesettings: {battle: {class: 'none', ultimate: true}}, opponent: opponent, state: STATE.IDLE, equipped: { weapons: {main: null, secondary: null}, items: {}}});
-            }
-        });
-    });
+    const db = client.db(String(server));
+    const dbo = db.collection(id);
 
-    client.close();
+    db.listCollections({name: id})
+    .next(function(err, collinfo) {
+        if (err) { return console.log(err); }
+        if (!collinfo) {
+            message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
+            let hp_mp = {maxhp: BASE.HP, hp: BASE.HP, maxmp: BASE.MP, mp: BASE.MP}
+            dbo.insertOne({balance: 10, rank: 1, lastdayworked: 0, xp: 0, hpmp: hp_mp, game: game, gamesettings: {battle: {class: 'none', ultimate: true}}, opponent: opponent, state: STATE.IDLE, equipped: { weapons: {main: null, secondary: null}, items: {}}});
+        }
+    });
 }
 
 
@@ -303,15 +299,18 @@ module.exports = {
         const id = message.author.id;
         const server = message.guild.id;
 
-        const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-        if (client.writeConcern || client.writeConcern) { 
-            client.close();
-            return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
-         }
-        //Initialize if necessary
-        CreateNewCollection(message, client, server, id);
+        // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+        // if (client.writeConcern || client.writeConcern) { 
+        //     client.close();
+        //     return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
+        //  }
 
-        client.connect(err => {
+
+        bot.mongoconnection.then(async (client) => {
+
+            //Initialize if necessary
+            CreateNewCollection(message, client, server, id);
+            
             const db = client.db(String(server));
             const dbo = db.collection(id);
             if (err) { return console.log(err); }
@@ -352,9 +351,6 @@ module.exports = {
             }
                 
         });
-
-        //Close the database
-        client.close();
     },
 
     //Battle Updating stuff

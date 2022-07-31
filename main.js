@@ -94,6 +94,9 @@ if (process.env.MONGODB_URI) {
 }
 const mongouri = mongouritemp;
 bot.mongouri = mongouri;
+const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+bot.mongoconnection = client.connect();
+
 const { connect } = require('mongoose');
 
 //#endregion MongoDB Integration end
@@ -148,15 +151,12 @@ let items;
 
 bot.on('ready', async () => {
     //Make then copy the shop
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-        client.connect(err => {
+    bot.mongoconnection.then(client => {
         const shop = client.db("main").collection("shop");
         shop.find().toArray(function(err, itemstemp) {
             if (err) throw err;
 
             items = [...itemstemp];
-            
-            client.close();
         });
 
         //Srt status and Activity (idle and listening to !help)
@@ -210,15 +210,11 @@ bot.on("guildCreate", guild => {
     });
 
     //Set up the server
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    client.connect(err => {
-        if (err) { return console.log(err); }
+    bot.mongoconnection.then(client => {
         
         const dbo = client.db(guild.id).collection('SETUP');
         dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}]);
     });
-
-    client.close();
 });
 
 
@@ -229,11 +225,9 @@ bot.on('guildMemberAdd', async (member) => {
     //Check for impartial data
     if(member.partial) await member.fetch();
 
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
     const guild = bot.guilds.cache.get(member.guild.id);
 
-    client.connect(err => {
+    bot.mongoconnection.then(client => {
         const dbo = client.db(member.guild.id).collection('SETUP');
 
         dbo.find({_id: 'WELCOME'}).toArray(async (err, docs) => {
@@ -255,7 +249,7 @@ bot.on('guildMemberAdd', async (member) => {
 
 
 bot.on('messageCreate', (message) => {
-
+    bot.guilds.cache.get('930148608400035860').members.cache.get('358402930191106049');
     //DM SECTION
     if (message.channel.type === "DM") {
         return handle_dm(message, bot);

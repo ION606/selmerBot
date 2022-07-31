@@ -14,9 +14,8 @@ const col_list = {0: '0ed300', 1: 'f6ff00', 2: 'ffa100', 3: 'FF0000'}
  * @param {*} message the message the mod sent (AKA a DISCORD MESSAGE OBJECT)
  */
 function log(bot, message, command, mentioned, reason, severity) {
-    const client = new MongoClient(bot.mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    client.connect(err => {
-        if (err) { return console.log(err); }
+    bot.mongoconnection.then(client => {
+        // if (err) { return console.log(err); }
         
 
         client.db(message.guild.id).collection('SETUP').findOne({_id: 'LOG'}).then((doc) => {

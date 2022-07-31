@@ -11,8 +11,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
         const singleCommandGames = ['ttt']; // Use when you have more single-player games
         const musicCommandList = ['PLAY', 'PAUSE', 'RESUME', 'STOP', 'SKIP'];
 
-        const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-        client.connect(async (err) => {
+        bot.mongoconnection.then(async (client) => {
 
             if (battlecommandlist.indexOf(interaction.customId) != -1) {
                 await interaction.deferReply();
@@ -75,8 +74,6 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 resolveComplaint(interaction);
             } //Button else ifs here
         });
-
-        client.close();
     }
 
     //Menu Selection
@@ -85,8 +82,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
         // const command = interaction.customId.substring(interaction.customId.indexOf('|'), interaction.customId.length - interaction.customId.indexOf('|'))
         
         if (interaction.customId.toLowerCase().indexOf('|heal') != -1) {
-            const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-            client.connect(err => {
+            bot.mongoconnection.then(client => {
                 console.log(id);
                 if (id != interaction.user.id) { return; }
 
