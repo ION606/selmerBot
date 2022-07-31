@@ -37,7 +37,6 @@ function CreateNewCollection(message, client, server, id, opponent = null, game 
 
     db.listCollections({name: id})
     .next(function(err, collinfo) {
-        if (err) { return console.log(err); }
         if (!collinfo) {
             message.reply("You didn't have a place in my databases, so I created one for you!\nPlease try your command again!")
             let hp_mp = {maxhp: BASE.HP, hp: BASE.HP, maxmp: BASE.MP, mp: BASE.MP}
@@ -313,7 +312,6 @@ module.exports = {
             
             const db = client.db(String(server));
             const dbo = db.collection(id);
-            if (err) { return console.log(err); }
 
             currencySymbol = bot.currencysymbolmmain;
 
