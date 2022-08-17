@@ -78,7 +78,14 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
             if (!l.includes(tier)) { return message.reply("Please select an existing tier ('none', 'low', 'medium', 'high')"); }
 
             dbo.updateOne({_id: 'LOG'}, {$set: {severity: tier}})
-        } 
+        } else if (command == 'announcement_role') {
+            const role = message.mentions.roles.first().id;
+            dbo.updateOne({_id: 'announcement'}, { $set: { 'role': role } });
+        } else if (command == "announcement_channel") {
+            const channel = message.guild.channels.cache.find(ch => ch.name === args[1]);
+            if (!channel) { return message.reply('The specified channel does not exist!'); }
+            dbo.updateOne({_id: 'announcement'}, { $set: { 'channel': channel } });
+        }
         
         else if (command == 'help') {
             let temp;
@@ -88,7 +95,9 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
                 temp = 'To enable logging, use the command _!setup keep\\_logs true_ and _!setup log\\_channel_ [channel name] to set the logging channel!\n';
                 temp += 'Use _!setup keep\\_logs false_ to disable logging and _!setup log\\_severity [none, low, medium, high]_ to set the threshold\n';
                 temp += '__Severities:__\n*none* - unmute, unban\n*low* - mute\n*medium* - kick\n*high* - ban\nEvery tier also includes all notifs for ***higher*** tiers (AKA _!setup log\\_severity none_ will log everything from every severity)\n';
-            } else { temp = 'Please use the following format: _!setup help [welcome, logs]_\nExample: _!setup help welcome_'; }
+            } else if (args[1] == 'announcement') {
+                temp = "To pick the announcement channel, use _!setup announcement\\_channel_\nTo pick the announcement role, use _!setup announcement\\_role_";
+            } else { temp = 'Use _!setup Please use the following format: _!setup help [welcome, logs, announcement]_\nExample: _!setup help welcome_'; }
 
             message.reply(temp);
         }

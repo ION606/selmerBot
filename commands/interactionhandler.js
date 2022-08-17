@@ -2,9 +2,14 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createSubscriptionManual } = require('./premium/stripe.js');
 const { pause_start_stop, playNext, showQueue } = require('./misc/playAudio.js');
 const { resolveComplaint } = require('./dev only/submitcomplaint.js');
+const reminders = require('./premium/reminders.js');
 // const { RSSInteractionHandler } = require('./premium/rssFeed.js');
+const { Interaction } = require('discord.js')
 
-
+/**
+ * 
+ * @param {Interaction} interaction
+ */
 async function handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection) {
     if (interaction.isButton()) {
         const battlecommandlist = ['ATTACK', 'HEAL', 'DEFEND', 'ITEMS', 'ULTIMATE'];
@@ -72,6 +77,10 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 
             } else if (interaction.customId == 'DEBUGURGENT' || interaction.customId == 'DEBUGDONE') {
                 resolveComplaint(interaction);
+            } else if (interaction.customId.indexOf('newEvent') != -1 || interaction.customId.indexOf('getEvents') != -1) {
+                reminders.modalHandle(bot, interaction);
+            } else if (interaction.customId.indexOf('reminderQueue') != -1) {
+                reminders.turnPage(bot, interaction);
             } //Button else ifs here
         });
     }
@@ -83,7 +92,6 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
         
         if (interaction.customId.toLowerCase().indexOf('|heal') != -1) {
             bot.mongoconnection.then(client => {
-                console.log(id);
                 if (id != interaction.user.id) { return; }
 
                 let current_user = turnManager.getTurn(client, bot, interaction);
@@ -132,6 +140,11 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
         } /*else if (interaction.customId.indexOf('RSS') != -1) {
             RSSInteractionHandler(bot, interaction);
         }*/  //menu else ifs here
+    }
+    
+    //Forms
+    else if (interaction.isModalSubmit()) {
+        reminders.modalHandle(bot, interaction);
     } //other selection types here
 }
 

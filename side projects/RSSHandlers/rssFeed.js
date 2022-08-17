@@ -8,7 +8,7 @@ const play = require('play-dl');
 const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 const hastebin = require("hastebin-gen");
-const { simpleCast } = require('./RSSHandlers/simplecast.js')
+const { simpleCast } = require('./simplecast.js')
 
 let Parser = require('rss-parser');
 let parser = new Parser();

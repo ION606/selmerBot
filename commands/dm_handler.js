@@ -1,5 +1,6 @@
 const { convoManager } = require('./premium/chat.js');
 const { handleInp } = require('./premium/stripe');
+const reminders = require('./premium/reminders.js')
 const { MongoClient, ServerApiVersion, ConnectionClosedEvent } = require('mongodb');
 
 function handle_dm(message, bot) {
@@ -9,10 +10,8 @@ function handle_dm(message, bot) {
         const member = bot.guilds.cache.get(bot.home_server).members.cache.get(message.author.id);
 
         bot.mongoconnection.then(async (client) => {
-            // if (err) { return console.log(err); }
-
             const dbo = client.db('main').collection('authorized');
-            dbo.find({id: message.author}).toArray((err, docs) => {
+            dbo.find({ discordID: message.author.id }).toArray((err, docs) => {
 
                 //Only available to Selmer Bot devs, testers and "authorized" users
                 if (docs[0] != undefined || member.roles.cache.has('944048889038774302') || member.roles.cache.has('946610800418762792')) {
@@ -25,6 +24,8 @@ function handle_dm(message, bot) {
 
     } else if (message.content.indexOf('!premium') != -1) {
         handleInp(bot, message);
+    } else if (message.content.indexOf('!reminders') != -1) {
+        reminders.execute(message, null, null, null, bot);
     } else {
         return message.reply('UNUSABLE DM COMMAND DETECTED');
     }

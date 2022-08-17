@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@discordjs/opus": "github:discordjs/opus",
+    "@discordjs/rest": "^1.0.1",
     "@discordjs/voice": "^0.8.0",
     "@napi-rs/canvas": "^0.1.22",
     "apt": "^0.0.2",

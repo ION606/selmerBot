@@ -38,7 +38,7 @@ async function getResponse(convo, bot) {
       return response;
 }
 
-    async function convoManager(clientinp, bot, message) {
+async function convoManager(clientinp, bot, message) {
 
     //Just in case, make sure it can't be changed
     const client = clientinp;

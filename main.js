@@ -213,7 +213,7 @@ bot.on("guildCreate", guild => {
     bot.mongoconnection.then(client => {
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}]);
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}, {_id: 'announcement', channel: null, role: null}]);
     });
 });
 
@@ -249,7 +249,6 @@ bot.on('guildMemberAdd', async (member) => {
 
 
 bot.on('messageCreate', (message) => {
-    bot.guilds.cache.get('930148608400035860').members.cache.get('358402930191106049');
     //DM SECTION
     if (message.channel.type === "DM") {
         return handle_dm(message, bot);
