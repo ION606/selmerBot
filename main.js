@@ -44,6 +44,7 @@ if (process.env.token != undefined) {
 
     MLAIKEY = require('./config.json').MLAIKEY;
     StripeAPIKey = require('./config.json').StripeAPIKey;
+
     // { token, home_server, debug_channel, MLAIKEY, StripeAPIKey } = require('./config.json'); // Doesn't work
     IDM = true;
 }

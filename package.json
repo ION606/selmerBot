@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@alpacahq/alpaca-trade-api": "^2.16.1",
     "@discordjs/opus": "github:discordjs/opus",
     "@discordjs/rest": "^1.0.1",
     "@discordjs/voice": "^0.8.0",
@@ -9,6 +10,8 @@
     "axios": "^0.27.2",
     "canvas": "^2.9.3",
     "cheerio": "^1.0.0-rc.10",
+    "date-fns": "^2.29.2",
+    "date-fns-timezone": "^0.1.4",
     "discord-reply": "^0.1.2",
     "discord.js": "^13.6.0",
     "feedparser": "^2.2.10",
@@ -26,6 +29,7 @@
     "play-dl": "^1.9.4",
     "random-memes": "^3.1.0",
     "request": "^2.88.2",
+    "robinhood": "^1.8.0",
     "rss-parser": "^3.12.0",
     "sequelize": "^6.19.0",
     "sqlite3": "^5.0.3",
