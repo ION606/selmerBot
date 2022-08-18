@@ -3,8 +3,8 @@ const { Modal, TextInputComponent, MessageActionRow, MessageButton, MessageEmbed
 const dateFns = require('date-fns');
 const { formatToTimeZone } = require('date-fns-timezone');
 const Alpaca = require('@alpacahq/alpaca-trade-api');
-const apiKeyId = require('../../config.json').alpKey;
-const secretKey = require('../../config.json').alpSec;
+const apiKeyId = process.env.alpKey || require('../../config.json').alpKey;
+const secretKey = process.env.alpSec || require('../../config.json').alpSec;
 const alpaca = new Alpaca({
     keyId: apiKeyId,
     secretKey: secretKey,
