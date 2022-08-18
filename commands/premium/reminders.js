@@ -1,4 +1,5 @@
 const { Modal, TextInputComponent, MessageActionRow, MessageButton, MessageEmbed, Interaction } = require('discord.js');
+const { checkRole } = require('../admin/verify');
 
 
 /**
@@ -126,26 +127,27 @@ async function postForm(interaction, isGuild = false) {
 
 
 //#region DATABASE PROCESSING
-//ADD SERVER SUPPORT
+
 function addEvent(obj, connection, interaction, embd) {
     try {
-        // console.log(obj.time, typeof obj.time); return;
-
+        var Id;
+        if (obj.event.userId != null) { Id = obj.event.userId }
+        else { Id = obj.event.guildId; }
         connection.then((client) => {
             // Update the Key object first to check if the time is already there
             const kbo = client.db('main').collection('reminderKeys');
-            kbo.findOne(({ 'userId': obj.event.userId })).then((doc) => {
+            kbo.findOne(({ 'userId': Id })).then((doc) => {
                 const t = obj.time.toString();
                 try {
                     if (doc) {
                         if (doc.times.indexOf(obj.time) == -1) {
-                            kbo.updateOne({ 'userId': obj.event.userId }, { $push: { times: t } })
+                            kbo.updateOne({ 'userId': Id }, { $push: { times: t } })
                         } else {
                             //Event already exists at this time
                             return interaction.reply("An event already exists at this time!");
                         }
                     } else {
-                        doc = { userId: obj.event.userId, times: [t] }
+                        doc = { userId: Id, times: [t] }
                         kbo.insertOne(doc);
                     }
 
@@ -201,7 +203,7 @@ function getEvents(bot, interaction, id, jpage = 0, isGuild = false, refered = f
     }
 
     bot.mongoconnection.then((client) => {
-            try {
+        try {
             var times;
             const dbo = client.db('main').collection('reminderKeys');
 
@@ -247,13 +249,16 @@ function getEvents(bot, interaction, id, jpage = 0, isGuild = false, refered = f
 
 //fields: [<name>, <description>, <date>, <time>, [offset], [url], [location]]
 function processForm(bot, interaction) {
+
     try {
         var guildId = null;
         var userId = null;
-        if (interaction.channel.type == 'DM') {
+        var isGuild = false;
+        if (interaction.customId.toLowerCase().indexOf('user') != -1) {
             userId = interaction.user.id;
         } else {
             guildId = interaction.guildId;
+            isGuild = true;
         }
 
 
@@ -315,7 +320,7 @@ function processForm(bot, interaction) {
         );
 
         const obj = { time: timeUTC, event: { guildId: guildId, userId: userId, name: name, description: desc, offset: 0, link: url, location: loc } }
-        addEvent(obj, bot.mongoconnection, interaction, embd);
+        addEvent(obj, bot.mongoconnection, interaction, embd, isGuild);
     } catch (err) {
         console.error(err);
     }
@@ -379,7 +384,7 @@ module.exports = {
                                 .setStyle('SUCCESS'),
                             new MessageButton()
                                 .setCustomId('getEvents')
-                                .setLabel('See Reminders')
+                                .setLabel('See Personal Reminders')
                                 .setStyle('PRIMARY'),
                         );
                     } else {
@@ -394,12 +399,12 @@ module.exports = {
                                 .setStyle('SUCCESS'),
                             new MessageButton()
                                 .setCustomId('getEvents')
-                                .setLabel('See Reminders')
+                                .setLabel('See Guild Reminders')
                                 .setStyle('PRIMARY'),
                         );
                     }
 
-                    return message.channel.send({ content: 'Please select an action (note that adding offset to an event is only supported on the website)', components: [row] });
+                    return message.channel.send({ content: 'Please select an action\n_Notes: Adding offset to an event is only supported on the website and personal reminders can be viewed in DM\'s_', components: [row] });
                 } else {
                     message.reply("You have to be a premium subscriber to use this feature!\n_support coming soon_");
                 }

@@ -141,6 +141,7 @@ function hpmp(message, command, dbo) {
 
 function equip(message, args, command, dbo, bot, shop) {
     const inp = args[1];
+    if (!inp) { return message.reply("Please provide input (either a weapon for main or shield for secondary)")}
 
     //Check if the user is already in a game
     dbo.find({'game': {$exists: true}}).toArray(function(err, docs) {
@@ -370,14 +371,14 @@ module.exports ={
                     //Handle sending the request and making sure the user exists here
                     let other_discord = message.mentions.users.first();
                     if (other_discord == undefined) {
-                        return message.reply(`${args[1]} is not a valid user!`);
+                        return message.reply(`"${args[1]}" is not a valid user (use _!game battle @user_)`);
                     }
                     
                     message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"battle"_. To accept, please reply to this message with _!game accept_`);
                 } else if (game == 'Tic Tac Toe' || command == 'Tic Tac Toe') {
                     let other_discord = message.mentions.users.first();
                     if (other_discord == undefined) {
-                        return message.reply(`${args[1]} is not a valid user!`);
+                        return message.reply(`"${args[1]}" is not a valid user (use _!game tictactoe @user_)`);
                     }
                     
                     message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"Tic Tac Toe"_. To accept, please reply to this message with _!game accept_`);

@@ -1,8 +1,16 @@
-function checkRole(bot, guild, userId) {
-    const role = guild.roles.cache.find((role) => { return (role.name == 'Selmer Bot Commands'); })
+function checkRole(bot, guild, userId, cal = false) {
+    var roleName;
+    
+    if (cal) {
+        roleName = "Selmer Bot Calendar";
+    } else {
+        roleName = "Selmer Bot Commands";
+    }
+
+    const role = guild.roles.cache.find((role) => { return (role.name == roleName); })
     const user = guild.members.cache.get(userId);
 
-    return (user.roles.cache.get(role.id) || user.id == guild.ownerId || bot.inDebugMode);
+    return (role != undefined && user.roles.cache.has(role.id)); // || user.id == guild.ownerId || bot.inDebugMode
 
 
     /*Maybe implement this later, useless for now

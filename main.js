@@ -201,11 +201,15 @@ bot.on("guildCreate", guild => {
         guild.roles.create({ name: 'Selmer Bot Commands' });
     }
     
+    if (guild.roles.cache.find((role) => { return (role.name == 'Selmer Bot Calendar'); }) == undefined) {
+        guild.roles.create({ name: 'Selmer Bot Calendar' });
+    }
+    
 
     //const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
     const server = bot.guilds.cache.get(guild.id);
     const owner = server.members.fetch(guild.ownerId).then(function(owner) {
-        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Commands_" role.');
+        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Commands_" role and people you want to access set the calendar the "Selmer Bot Calendar" role');
         owner.send('To help set up Selmer Bot to work better with your server, use _!setup help_ in a channel Selmer Bot is in!');
     });
 
@@ -215,6 +219,49 @@ bot.on("guildCreate", guild => {
         const dbo = client.db(guild.id).collection('SETUP');
         dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}, {_id: 'announcement', channel: null, role: null}]);
     });
+});
+
+
+bot.on("guildDelete", guild => {
+    bot.mongoconnection.then((client) => {
+        //Insufficient Permission????
+        // db.dropDatabase();
+
+        try {
+            const db = client.db(guild.id);
+            db.listCollections().forEach(function(x) { db.collection(x.name).drop(); });
+
+            var times;
+            const dbo = client.db('main').collection('reminderKeys');
+
+            //ReminderKeys are all stored as userId, the reminders themselves are not
+            dbo.findOne({userId: guild.id}).then((doc) => {
+                times = doc.times;
+                const tbo = client.db('main').collection('reminders');
+                
+                tbo.find({time: {$in: times}}).toArray((err, docs) => {
+                    for (let i = 0; i < docs.length; i ++) {
+                        for (let j in docs[i]) {
+                            if (!isNaN(j) && (docs[i][j].guildId == guild.id)) {
+                                delete docs[i][j];
+                                docs[i].amt --;
+                            }
+                        }
+
+                        if (docs.amt > 0) {
+                            tbo.replaceOne({ time: docs[i].time }, docs[i]);
+                        } else {
+                            tbo.deleteOne({ time: docs[i].time });
+                        }
+                    }
+                });
+            });
+
+            dbo.deleteOne({ userId: guild.id });
+        } catch (err) {
+            console.log(err);
+        }
+    })
 });
 
 

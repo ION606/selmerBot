@@ -5,7 +5,7 @@ module.exports ={
     description: "Gets help for all of Selmer Bot's commands",
     execute(message, args, Discord, Client, bot) {
 
-        const groups = new Map([['SBspec', ['arrow', 'extracredit', 'profile', 'quotes']], ['adminCommands', [ 'setup', 'lock', 'unlock', 'serverLock' ]]]);
+        const groups = new Map([['SBspec', ['arrow', 'extracredit', 'profile', 'quotes']], ['adminCommands', [ 'setup', 'lock', 'unlock', 'serverlock' ]]]);
 
         if (args[0] == 'econ') {
             let temp = "***Selmer Bot Commands (Econ):***\n";

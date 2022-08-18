@@ -3,6 +3,7 @@ const { createSubscriptionManual } = require('./premium/stripe.js');
 const { pause_start_stop, playNext, showQueue } = require('./misc/playAudio.js');
 const { resolveComplaint } = require('./dev only/submitcomplaint.js');
 const reminders = require('./premium/reminders.js');
+const tuto = require('../commands/Selmer Specific/intro');
 // const { RSSInteractionHandler } = require('./premium/rssFeed.js');
 const { Interaction } = require('discord.js')
 
@@ -81,6 +82,9 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 reminders.modalHandle(bot, interaction);
             } else if (interaction.customId.indexOf('reminderQueue') != -1) {
                 reminders.turnPage(bot, interaction);
+            } else if (interaction.customId.indexOf("tutoQueue") != -1){
+                const page = Number(interaction.customId.split('|')[1]);
+                tuto.postEmbd(bot, interaction, page, true);
             } //Button else ifs here
         });
     }
