@@ -13,7 +13,7 @@ const tutoText = [
     "__**MISCELLANEOUS**__\nThese are the commands that are not really in any of the other categories. Don't be fooled, these are actually some of the most useful commands Selmer Bot has to offer. From playing music to web scraping to memes, I'm sure Selmer Bot has what you're looking for!\n\n__***COMMANDS***__\n!help, !kareoke, !link, !meme, !pickupline, !audio, !react, !scrape, !stocks, !crypto",
     "__**DM COMMANDS**__\nThese commands will only work in DM's. All these commands will only work with Selmer Bot Premium (it's on the next page).\nThese features include Reminders (AKA a calendar) and Selmer Bot's own chat AI!\n\n__***COMMANDS***__\n!chat, !startconvo, !endconvo, !premium",
     "__**SELMER BOT PREMIUM**__\nUse an AI chat, complete with semi-accurate IRL data, have Selmer Bot remind you of events with an easy-to-use interface and even a clickable calendar on the Selmer Bot website (_www.selmerbot.com_)\n\n__***COMMANDS***__\n!premium, !premium buy, !premium manage, !reminders",
-    "__**Thank you for completing the Selmer Bot Tutorial!**__\n\nTry out all Selmer Bot's features, play the games and most importantly, have fun!\n\n-The Selmer Bot Team AKA ION606"
+    "__**Thank you for completing the Selmer Bot Tutorial!**__\n\nTry out Selmer Bot's features, play the games and most importantly, have fun!\n\n-The Selmer Bot Team AKA ION606"
 ];
 
 //If the page number == 0 and refered == false, then interaction will be a Message

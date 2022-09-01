@@ -8,7 +8,7 @@ async function getAllCoins() {
     const coinlistraw = await CoinGeckoClient.coins.all();
     coinlistraw.data.forEach((coin) => {
         const obj = { id: coin.id, symbol: coin.symbol, name: coin.name, img: coin.image.small };
-        coinlist.set(coin.symbol, obj);
+        coinlist.set(coin.symbol.toLowerCase(), obj);
     });
 }
 getAllCoins();
@@ -24,9 +24,9 @@ module.exports = {
         } else if (args[0] == 'list') {
             try {
                 return new Promise((resolve, reject) => {
-                    let temp = "```";
+                    let temp = "```Name --> Symbol\n\n";
                     coinlist.forEach((val, key) => {
-                        temp += `Name: ${val.name}, Symbol: ${key}\n`;
+                        temp += `${val.name} --> ${key.toUpperCase()}\n`;
                     });
                     temp += "```";
                     
