@@ -7,6 +7,7 @@ let ecoimport = require("../db/econ.js");
 const battle = require("./battle.js");
 const ttt = require('./tictactoe.js');
 const trivia = require('./trivia.js');
+const mnswpr = require('./minesweeper.js');
 
 //#endregion
 
@@ -29,9 +30,7 @@ const allGames = ['battle', 'Tic Tac Toe'];
 */
 async function Initialize(bot, user_dbo, command, message, first, second, other_dbo = null) {
     return new Promise(async function(resolve, reject) {
-        user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
-            let doc = docs[0];
-            console.log(command);
+        user_dbo.findOne({"game": {$exists: true}}).then(function(doc){
             if (allGames.indexOf(command) != -1) {
                 if (other_dbo != null) {
                     user_dbo.updateOne( { "game": {$exists: true} }, { $set: { game: command, opponent: other_dbo.s.namespace.collection, state: STATE.FIGHTING }});
@@ -250,7 +249,7 @@ module.exports ={
 
         //Check if the client is currently in a game and act accordingly
 //#region Check Game
-        dbo.find({"game": {$exists: true}}).toArray(async function(err, docs){
+        dbo.find({"game": {$exists: true}}).toArray(async function(err, docs) {
             if (err) { return console.log(err); }
             let doc = docs[0];
             let game = null;
@@ -384,8 +383,19 @@ module.exports ={
                     message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"Tic Tac Toe"_. To accept, please reply to this message with _!game accept_`);
                 } else if (game == 'trivia' || command == 'trivia') {
                     trivia.execute(message, args, Discord, client, bot);
+                } else if (game == "minesweeper" || command == 'minesweeper') {
+                    if (game == "minesweeper" && command == 'minesweeper') {
+                        return message.reply("You're already in a game!");
+                    }
+                    const threadname = `${message.author.username} has started a solo game of Minesweeper`;
+                    const thread = await message.channel.threads.create({
+                        name: threadname,
+                        // type: 'GUILD_PRIVATE_THREAD',
+                        autoArchiveDuration: 60,
+                        reason: `N/A`,
+                    });
+                    mnswpr.handle(bot, null, thread, message, args);
                 }
-
 
                 //Catch statement (invalid command)
                 else {

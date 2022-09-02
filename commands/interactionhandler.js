@@ -4,6 +4,7 @@ const { pause_start_stop, playNext, showQueue } = require('./misc/playAudio.js')
 const { resolveComplaint } = require('./dev only/submitcomplaint.js');
 const reminders = require('./premium/reminders.js');
 const tuto = require('../commands/Selmer Specific/intro');
+const mswpr = require('./games/minesweeper.js');
 // const { RSSInteractionHandler } = require('./premium/rssFeed.js');
 const { Interaction } = require('discord.js')
 
@@ -85,6 +86,8 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
             } else if (interaction.customId.indexOf("tutoQueue") != -1){
                 const page = Number(interaction.customId.split('|')[1]);
                 tuto.postEmbd(bot, interaction, page, true);
+            } else if (interaction.customId.indexOf("mswpr|") != -1) {
+                mswpr.handle(bot, interaction, interaction.channel, interaction.message, null, xp_collection);
             } //Button else ifs here
         });
     }

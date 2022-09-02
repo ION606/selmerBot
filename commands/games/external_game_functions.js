@@ -38,7 +38,7 @@ function loseGame(user_dbo, xp_collection, message, bot = null) {
 }
 
 
-function winGame(client, bot, db, user_dbo, xp_collection, message) {
+function winGame(client, bot, db, user_dbo, xp_collection, message, singlePlayer = false) {
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
         
@@ -54,14 +54,18 @@ function winGame(client, bot, db, user_dbo, xp_collection, message) {
         }
 
         //Delete the bot's record of the game
-        client.db('B|S' + bot.user.id).collection(message.guild.id).drop();
+        if (!singlePlayer) {
+            client.db('B|S' + bot.user.id).collection(message.guild.id).drop();
+        }
         
 
         //Update the player with xp
         user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank), 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
-        const channel = bot.channels.cache.get(message.channel.parentId);
-        channel.send(`<@${user_dbo.s.namespace.collection}> just won a game of "${docs[0].game}"!`);
+        if (!singlePlayer) {
+            const channel = bot.channels.cache.get(message.channel.parentId);
+            channel.send(`<@${user_dbo.s.namespace.collection}> just won a game of "${docs[0].game}"!`);
+        }
         message.channel.delete();
     });
 }
