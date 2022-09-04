@@ -237,30 +237,36 @@ bot.on("guildDelete", guild => {
 
             //ReminderKeys are all stored as userId, the reminders themselves are not
             dbo.findOne({userId: guild.id}).then((doc) => {
+                if (!doc || !doc.times) { return; }
+
                 times = doc.times;
                 const tbo = client.db('main').collection('reminders');
                 
                 tbo.find({time: {$in: times}}).toArray((err, docs) => {
-                    for (let i = 0; i < docs.length; i ++) {
-                        for (let j in docs[i]) {
-                            if (!isNaN(j) && (docs[i][j].guildId == guild.id)) {
-                                delete docs[i][j];
-                                docs[i].amt --;
+                        try {
+                        for (let i = 0; i < docs.length; i ++) {
+                            for (let j in docs[i]) {
+                                if (!isNaN(j) && (docs[i][j].guildId == guild.id)) {
+                                    delete docs[i][j];
+                                    docs[i].amt --;
+                                }
+                            }
+
+                            if (docs.amt > 0) {
+                                tbo.replaceOne({ time: docs[i].time }, docs[i]);
+                            } else {
+                                tbo.deleteOne({ time: docs[i].time });
                             }
                         }
-
-                        if (docs.amt > 0) {
-                            tbo.replaceOne({ time: docs[i].time }, docs[i]);
-                        } else {
-                            tbo.deleteOne({ time: docs[i].time });
-                        }
+                    } catch (err) {
+                        console.error(err);
                     }
                 });
             });
 
             dbo.deleteOne({ userId: guild.id });
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     })
 });
