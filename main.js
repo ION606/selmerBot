@@ -73,6 +73,7 @@ bot.prefix = prefix;
 bot.inDebugMode = IDM;
 bot.home_server = home_server;
 bot.debug_channel = debug_channel;
+bot.inviteLink = 'https://discord.com/oauth2/authorize?client_id=944046902415093760&scope=applications.commands+bot&permissions=549755289087';
 
 const configuration = new Configuration({
     apiKey: MLAIKEY,

@@ -57,7 +57,6 @@ function startTrivia(message, m, time, bot) {
 
     const question = obj.question;
     const answer = obj.answer;
-    console.log(answer);
 
     const filter = (response) => {
         // return item.answers.some(answer => answer.toLowerCase() === response.content.toLowerCase());

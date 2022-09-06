@@ -3,7 +3,7 @@ const { winGame, loseGame, equipItem } = require('./external_game_functions.js')
 const wait = require('node:timers/promises').setTimeout;
 const { STATE } = require('../db/econ.js')
 
-function startGame(bot, channel, args) {
+function startGame(bot, channel, message, args) {
     let componentlist = [];
     var diff;
 
@@ -17,6 +17,11 @@ function startGame(bot, channel, args) {
         diff = 0;
     }
 
+    let user = '';
+    if (args.length < 2 || args[1] == 'solo') {
+        user = message.author.id;
+    }
+
     for (let i = 0; i < 5; i ++) {
         const row = new MessageActionRow();
 
@@ -26,9 +31,9 @@ function startGame(bot, channel, args) {
             const isbmb = (Math.random() > (0.70 - diff));
 
             if (isbmb) {
-                btn.setCustomId(`mswpr|${i}|${j}|t`);
+                btn.setCustomId(`mswpr|${i}|${j}|t|${user}`);
             } else {
-                btn.setCustomId(`mswpr|${i}|${j}|f`);
+                btn.setCustomId(`mswpr|${i}|${j}|f|${user}`);
             }
             
             btn.setLabel('?')
@@ -78,10 +83,17 @@ async function changeBoard(bot, interaction, xp_collection) {
     interaction.deferUpdate();
     const id = interaction.customId.split('|');
 
-    //"mswpr|y|x"
+    //"mswpr|y|x|<t/f>|[user]"
     const col = id[1];
     const row = id[2];
     const isbmb = (id[3] === 't');
+    const user = id[4];
+    if (user && user != '') {
+        if (interaction.user.id != user) {
+            interaction.user.send(`Message from a Minesweeper game in <#${interaction.channel.id}>: ***It's not your turn!***`);
+            return; // interaction.reply({ content: "It's not your turn!", ephemeral: true }); //Can only reply once
+        }
+    }
 
     var components = interaction.message.components;
     var btn = components[col].components[row];
@@ -129,7 +141,7 @@ async function changeBoard(bot, interaction, xp_collection) {
 
 
 function checkAndStartGame(bot, message, channel, args) {
-        bot.mongoconnection.then(client => {
+    bot.mongoconnection.then(client => {
         const db = client.db(message.guild.id);
         const dbo = db.collection(message.author.id);
         dbo.findOne({game: {$exists: true}}).then((doc) => {
@@ -137,7 +149,7 @@ function checkAndStartGame(bot, message, channel, args) {
                 if (doc.game != null) { return message.reply("You're already in a game!"); }
 
                 dbo.updateOne({ "game": {$exists: true} }, { $set: { game: "minesweeper", state: STATE.FIGHTING }});
-                startGame(bot, channel, args);
+                startGame(bot, channel, message, args);
             } catch (err) {
                 console.log(err);
                 const { addComplaintButton } = require('../dev only/submitcomplaint.js');

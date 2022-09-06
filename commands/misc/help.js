@@ -1,11 +1,12 @@
 const { modHelp } = require('../admin/moderation.js');
+
 //CHANGE THIS TO FORMS?
 module.exports ={
     name: "help",
     description: "Gets help for all of Selmer Bot's commands",
     execute(message, args, Discord, Client, bot) {
 
-        const groups = new Map([['SBspec', ['arrow', 'extracredit', 'profile', 'quotes']], ['adminCommands', [ 'setup', 'lock', 'unlock', 'serverlock' ]]]);
+        const groups = new Map([['SBspec', ['arrow', 'extracredit', 'profile', 'quotes', 'code']], ['adminCommands', [ 'setup', 'lock', 'unlock', 'serverlock' ]]]);
 
         if (args[0] == 'econ') {
             let temp = "***Selmer Bot Commands (Econ):***\n";
