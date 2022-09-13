@@ -79,16 +79,21 @@ async function execute(bot, message, args, command, Discord, mongouri, items, xp
                 if (!l.includes(tier)) { return message.reply("Please select an existing tier ('none', 'low', 'medium', 'high')"); }
 
                 dbo.updateOne({_id: 'LOG'}, {$set: {severity: tier}})
+
+                message.reply("Severity updated!");
             } else if (command == 'announcement_role') {
                 if (message.mentions.roles.first() == undefined) {
                     return message.reply("Please mention a role (_!setup announcement\\_role **@role**_)\n_Note: Selmer Bot does NOT ping the @everyone role_");
                 }
                 const role = message.mentions.roles.first().id;
                 dbo.updateOne({_id: 'announcement'}, { $set: { 'role': role } });
+
+                message.reply("Role updated!");
             } else if (command == "announcement_channel") {
                 const channel = message.guild.channels.cache.find(ch => ch.name === args[1]);
                 if (!channel) { return message.reply('The specified channel does not exist!'); }
-                dbo.updateOne({_id: 'announcement'}, { $set: { 'channel': channel } });
+
+                dbo.updateOne({_id: 'announcement'}, { $set: { 'channel': channel.id } });
             }
             
             else if (command == 'help') {
