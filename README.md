@@ -2,5 +2,10 @@
 
 Authors: ION606, MajorDrools
 
-Description:
-This is a bot modeled after Selmer Bringsjord of RPI and all the wonderful things he says
+### Node Packages Installation Instructions
+Download the _package.json_ file from the repo
+`npm install`
+
+
+### Run Selmer Bot Locally
+Set the entry point to `main.js`, then run using `node .`
