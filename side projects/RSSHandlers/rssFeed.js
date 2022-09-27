@@ -5,7 +5,7 @@ var FeedParser = require('feedparser');
 const fetch = require('node-fetch');
 const { VoiceConnectionStatus, AudioPlayerStatus, createAudioPlayer, StreamType,  joinVoiceChannel, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
 const play = require('play-dl');
-const { addComplaintButton } = require('../dev only/submitcomplaint');
+const { addComplaintButton } = require('../../commands/dev only/spam_collection.js');
 
 const hastebin = require("hastebin-gen");
 const { simpleCast } = require('./simplecast.js')
@@ -137,11 +137,12 @@ function playAudio(bot, message, user, obj) {
 
 async function getAndFormatRSS(bot, message, user, inp) {
 
+    message.reply(inp).catch((err) => { message.channel.send(inp); console.error(err); });
+
     var req = fetch(inp)
     const feedparser = new FeedParser();
     
     req.then(function (res) {
-        
       if (res.status !== 200) {
         throw new Error('Bad status code');
       }
@@ -172,14 +173,15 @@ async function getAndFormatRSS(bot, message, user, inp) {
             i ++;
             if (i >= 100) { break; }
         }
-    })
+    });
     
     feedparser.addListener('end', () => {
         const item = items[Math.round(Math.random() * items.length)];
-
+// return console.log(item);
         if (inp.indexOf('simplecast') != -1) {
             var s = new simpleCast(item, inp);
-            s.audioLink = 'https://download.samplelib.com/mp3/sample-15s.mp3';
+
+            // s.audioLink = 'https://download.samplelib.com/mp3/sample-15s.mp3';
             playAudio(bot, message, user, s);
         }
     });
@@ -314,9 +316,7 @@ module.exports = {
 
 
 /*
-REMOVED
-"ABC": "https://abcnews.go.com/abcnews/topstories"
-"FBI": "https://www.fbi.gov/feeds/national-press-releases/rss.xml" (Uhhhh......maybe I should't use this one.....)
-
-
+    REMOVED
+    "ABC": "https://abcnews.go.com/abcnews/topstories"
+    "FBI": "https://www.fbi.gov/feeds/national-press-releases/rss.xml" (Uhhhh......maybe I should't use this one.....)
 */

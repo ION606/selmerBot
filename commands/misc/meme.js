@@ -5,7 +5,8 @@ const { randomHexColor } = require('../admin/colorgen.js');
 module.exports = {
     name: 'meme',
     description: 'Selmer Bot will post a random meme from reddit',
-    async execute(message, args, Discord, Client, bot) {
+    async execute(interaction, Discord, Client, bot) {
+        interaction.deferReply();
         memes.random().then(meme => {
             
             const newEmbed = new Discord.MessageEmbed()
@@ -15,7 +16,7 @@ module.exports = {
             .setDescription(`category: ${meme.category}`)
             .setImage(meme.image);
             
-            message.channel.send({ embeds: [newEmbed] });
+            interaction.editReply({ embeds: [newEmbed] });
         }).catch(async err => {
             console.log(err);
             //Try a different way
@@ -23,7 +24,7 @@ module.exports = {
             const response = await fetch('https://some-random-api.ml/meme');
             const data = await response.json().catch(err => {
                 console.log(err);
-                return message.reply("_Uh oh, something's gone wrong!_");
+                return interaction.reply("_Uh oh, something's gone wrong!_");
             });
 
             const newEmbed = new Discord.MessageEmbed()
@@ -33,7 +34,7 @@ module.exports = {
             .setDescription(`category: ${data.category}`)
             .setImage(data.image);
             
-            message.channel.send({ embeds: [newEmbed] });
+            interaction.editReply({ embeds: [newEmbed] });
         });
-    }
+    }, options: []
 }

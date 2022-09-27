@@ -1,9 +1,10 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createSubscriptionManual } = require('./premium/stripe.js');
-const { pause_start_stop, playNext, showQueue } = require('./misc/playAudio.js');
+const { pause_start_stop, playNext, showQueue } = require('./audio/audioMain.js');
 const { resolveComplaint } = require('./dev only/submitcomplaint.js');
+const { RSSInteractionHandler } = require('../side projects/RSSHandlers/rssFeed.js');
 const reminders = require('./premium/reminders.js');
-const tuto = require('../commands/Selmer Specific/intro');
+const tuto = require('./Selmer Specific/tuto');
 const mswpr = require('./games/minesweeper.js');
 // const { RSSInteractionHandler } = require('./premium/rssFeed.js');
 const { Interaction } = require('discord.js')
@@ -72,7 +73,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                     playNext(interaction, bot);
                 } else if (interaction.customId.indexOf('audioQueue|') != -1) {
                     const page = Number(interaction.customId.split('|')[1]);
-                    showQueue(bot, interaction.message, interaction, page);
+                    showQueue(bot, true, interaction, page);
                 } else {
                     pause_start_stop(interaction, bot);
                 }
@@ -147,9 +148,11 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
 
                 //Handle the interaction here
             }
-        } /*else if (interaction.customId.indexOf('RSS') != -1) {
-            RSSInteractionHandler(bot, interaction);
-        }*/  //menu else ifs here
+        } else if (interaction.customId.indexOf('RSS') != -1) {
+            if (bot.inDebugMode) {
+                RSSInteractionHandler(bot, interaction);
+            }
+        }  //menu else ifs here
     }
     
     //Forms

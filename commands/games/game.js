@@ -217,31 +217,31 @@ module.exports ={
 
 
 //#region Setup
-    const id = message.author.id;
-    const server = message.guild.id;
+        const id = message.author.id;
+        const server = message.guild.id;
 
-    // // @ts-ignore
-    // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    // if (client.writeConcern || client.writeConcern) { 
-    //     client.close();
-    //     return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
-    // }
-    var client;
-    await bot.mongoconnection.then((client1) => {
-        client = client1;
-    });
+        // // @ts-ignore
+        // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+        // if (client.writeConcern || client.writeConcern) { 
+        //     client.close();
+        //     return message.reply("Something went wrong with the database, please try again later and contact support if this problem persists!");
+        // }
+        var client;
+        await bot.mongoconnection.then((client1) => {
+            client = client1;
+        });
 
-    const botdb = client.db('B|S' + bot.user.id);
-    const serverinbotdb = botdb.collection(server);
+        const botdb = client.db('B|S' + bot.user.id);
+        const serverinbotdb = botdb.collection(server);
 
-    //Initialize if necessary
-    ecoimport.CreateNewCollection(message, client, server, id);
-    command = args[0];
+        //Initialize if necessary
+        ecoimport.CreateNewCollection(message, client, server, id);
+        command = args[0];
 
-    //Check for a second person and create a second database entry if neccessary
-    if (message.mentions.users.first() != undefined) {
-        ecoimport.CreateNewCollection(message, client, server, message.mentions.users.first().id);
-    }
+        //Check for a second person and create a second database entry if neccessary
+        if (message.mentions.users.first() != undefined) {
+            ecoimport.CreateNewCollection(message, client, server, message.mentions.users.first().id);
+        }
 
 //#endregion
         const db = client.db(String(server));

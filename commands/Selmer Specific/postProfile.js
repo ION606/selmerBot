@@ -1,7 +1,7 @@
 module.exports = {
     name: "profile",
     description: "Posts a description of Monsieur Sleemer himself",
-    execute(message, args, Discord, Client, bot) {
+    execute(interaction, Discord, Client, bot) {
         const newEmbed = new Discord.MessageEmbed()
         .setColor('#002eff')
         .setTitle('My professional resume')
@@ -14,6 +14,6 @@ module.exports = {
             {name: '\t__Epithet 2__', value: "_There is no god, only logic_"}
         );
         
-        message.channel.send({ embeds: [newEmbed] });
-    }
+        interaction.reply({ embeds: [newEmbed] });
+    }, options: []
 }

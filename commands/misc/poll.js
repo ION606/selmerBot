@@ -1,13 +1,12 @@
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, Constants } = require('discord.js');
 
 
 //!poll <name> <option 1, option 2> [option 3...option 10]
 module.exports = {
     name: "poll",
     description: "Create a cool poll embed (with time up to 1 hour!)",
-    async execute(message, args, Discord, Client, bot) {
-        if (args.length < 3) { return message.reply("Please provide a poll name, time (like 1:25 or 0 for not timed) and 1 - 10 options!"); }
-        if (args.length > 12) { return message.reply("Please specify less than 10 options!"); }
+    async execute(interaction, Discord, Client, bot) {
+        const args = interaction.options.data;
 
         const timeList = [ '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟' ];
         const author = {
@@ -15,32 +14,36 @@ module.exports = {
             url: "",
             iconURL: bot.user.displayAvatarURL()
         }
+        const name = args.filter((arg) => { return (arg.name == 'question'); })[0].value;
 
-
-        var time = 0;
+        const time = interaction.options.data.filter((arg) => { return (arg.name == 'time'); })[0].value;
         var temp;
-        var isTimed = !Number.isNaN(Number(args[1].split(":")[0]));
+        // var isTimed = !Number.isNaN(Number(args[1].split(":")[0]));
 
-        if (!isTimed) {
-            temp = `This poll was created by ${message.author} and has no time limit!\n`;
+        if (time != 0) {
+            temp = `This poll was created by ${interaction.user} and has no time limit!\n`;
         } else {
-            time += (Number(args[1].split(':')[0]) * 60) + Number(args[1].split(':')[1]);
-            temp = `This poll was created by ${message.author} and ends <t:${Math.floor((new Date()).getTime()/1000) + time}:R>!\n`;
+            time += time * 60; // (Number(args[1].split(':')[0]) * 60) + Number(args[1].split(':')[1]);
+            temp = `This poll was created by ${interaction.user} and ends <t:${Math.floor((new Date()).getTime()/1000) + time}:R>!\n`;
         }
 
         //args[0] is the poll name
-        for(let i = 2; i < args.length; i ++) {
+        for(let i = 0; i < args.length; i ++) {
+            if (args[i].name.indexOf('option') == -1) { continue; }
             // complist.push({ name: `${timeList[i - 1]}: ${args[i]}`, value: "" });
-            temp += `\n${timeList[i - 2]}: ${args[i]}\n`;
+            temp += `\n${timeList[i - 2]}: ${args[i].value}\n`;
         }
 
         const embd = new MessageEmbed()
         .setTimestamp()
-        .setTitle(`${args[0]}`)
+        .setTitle(`${name}`)
         .setDescription(temp)
         .setAuthor(author)
 
-        message.channel.send({ embeds: [embd] }).then((msg) => {
+        const m = interaction.channel.send({ embeds: [embd] });
+        m.then((msg) => {
+            interaction.reply("Poll Posted!");
+
             for(let i = 0; i < args.length - 2; i ++) {
                 msg.react(timeList[i]);
             }
@@ -85,5 +88,19 @@ module.exports = {
                 msg.reply(temp);
             });
         });
-    }
+    },
+    options: [
+        {name: 'question', description: 'The poll question...', type: Constants.ApplicationCommandOptionTypes.STRING, required: true},
+        {name: 'time', description: 'the time the poll is open for in minutes (for no limit input 0)', type: Constants.ApplicationCommandOptionTypes.INTEGER, required: true},
+        {name: 'option1', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: true},
+        {name: 'option2', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option3', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option4', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option5', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option6', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option7', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option8', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option9', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+        {name: 'option10', description: 'A poll option', type: Constants.ApplicationCommandOptionTypes.STRING, required: false},
+    ]
 }

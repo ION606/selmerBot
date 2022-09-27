@@ -1,4 +1,5 @@
 // https://ponly.com/200-pick-up-lines/
+const { Constants } = require('discord.js');
 
 const cheesy = [
     'If I said you had a good body would you hold it against me?',
@@ -280,32 +281,33 @@ const anime = [
 module.exports = {
     name: 'pickupline',
     description: 'Get a pickup line from our selection of 200 lines!',
-    execute(message, args, Discord, Client, bot) {
+    execute(interaction, Discord, Client, bot) {
         const nameList = new Map([['cheesy', cheesy], ['funny', funny], ['smooth', smooth], ['best', best], ['anime', anime]]);
+        const type = interaction.options.data[0].value;
 
-        if (args[0] == 'sources') {
+        if (type == 'sources') {
             message.reply("The normal lines are from https://ponly.com/200-pick-up-lines/\nThe anime lines are from https://thoughtcatalog.com/january-nelson/2021/06/anime-pick-up-lines/")
             .then((msg) => { msg.suppressEmbeds(true); })
             return;
         }
 
-        if (args.length < 1 || (!nameList.get(args[0]) && args[0] != 'random')) { return message.reply("Please use the following format !pickupline <'cheesy', 'funny', 'smooth', 'best', 'anime', 'random', 'sources'>"); }
 
         var key;
-        if (args[0] == 'random') {
+        if (type == 'random') {
             let keyInd = Math.floor(Math.random() * nameList.size);
             key = Array.from(nameList.keys())[keyInd];
         } else {
-            key = args[0];
+            key = type;
         }
 
 
         const arr = nameList.get(key);
         keyInd = Math.floor(Math.random() * arr.length);
         try {
-            message.reply(arr[keyInd]);
+            interaction.reply(arr[keyInd]);
         } catch {
-            message.channel.send(arr[keyInd]);
+            interaction.channel.send(arr[keyInd]);
         }
-    }
+    },
+    options: [{name: 'type', description: 'Pick the genre of line or take a chance with random!', type: Constants.ApplicationCommandOptionTypes.STRING, required: true, choices: [{name: "cheesy", value: "cheesy"}, {name: "funny", value: "funny"}, {name: "smooth", value: "smooth"}, {name: "best", value: "best"}, {name: "anime", value: "anime"}, {name: "random", value: "random"}, {name: "sources", value: "sources"} ] }]
 }

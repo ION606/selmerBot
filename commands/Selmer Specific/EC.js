@@ -1,7 +1,7 @@
 module.exports = {
     name: 'extracredit',
     description: "Selmer Bot Dm's you for some *AHEM* extra credit",
-    execute(message, args, Discord, Client, bot) {
+    execute(interaction, Discord, Client, bot) {
         let dm;
         let num = Math.floor(Math.random() * 10);
         
@@ -41,7 +41,10 @@ module.exports = {
             break;
         }
 
-        let ID = message.member.id;
-        message.client.users.fetch(ID).then(user => user.send(dm));
-    }
+        // let ID = interaction.user.id;
+        // message.client.users.fetch(ID).then(user => user.send(dm));
+        interaction.user.send(dm);
+        interaction.reply({content: "Extra Credit sent  😉", ephemeral: true});
+    },
+    options: []
 }

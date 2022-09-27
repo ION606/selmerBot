@@ -1,4 +1,3 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
 const Discord = require('discord.js');
 const SEVCODES = {
     none: 0,
@@ -9,18 +8,16 @@ const SEVCODES = {
 const col_list = {0: '0ed300', 1: 'f6ff00', 2: 'ffa100', 3: 'FF0000'}
 
 /**
- * 
- * @param {*} bot
- * @param {*} message the message the mod sent (AKA a DISCORD MESSAGE OBJECT)
+ * @param {Discord.Client} bot
+ * @param {Discord.Interaction} interaction the message the mod sent (AKA a DISCORD MESSAGE OBJECT)
  */
-function log(bot, message, command, mentioned, reason, severity) {
+function log(bot, interaction, command, mentioned, reason, severity) {
     bot.mongoconnection.then(client => {
         // if (err) { return console.log(err); }
-        
 
-        client.db(message.guild.id).collection('SETUP').findOne({_id: 'LOG'}).then((doc) => {
-            if (!doc) { return message.channel.send("Server logs not set up yet!"); }
-            const channel = message.guild.channels.cache.get(doc.logchannel);
+        client.db(interaction.guildId).collection('SETUP').findOne({_id: 'LOG'}).then((doc) => {
+            if (!doc) { return interaction.reply("Server logs not set up yet!"); }
+            const channel = interaction.guild.channels.cache.get(doc.logchannel);
 
             if (!channel) { return console.log("There is no specified log channel!"); }
             //Check severity threshold
@@ -35,7 +32,7 @@ function log(bot, message, command, mentioned, reason, severity) {
             .setColor(col_list[severity])
             .setTitle(`User ${mentioned.username}#${mentioned.discriminator} has been ${action}`)
             //.setURL('https://discordjs.guide/popular-topics/embeds.html#embed-preview')
-            .setDescription(`Reason: ${reason}\n Responsible Mod: ${message.author.username}#${message.author.discriminator}`)
+            .setDescription(`Reason: ${reason}\n Responsible Mod: ${interaction.user.username}#${interaction.user.discriminator} (${interaction.user})`)
             .setThumbnail(mentioned.displayAvatarURL())
             .setTimestamp();
 

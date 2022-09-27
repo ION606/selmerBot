@@ -1,28 +1,33 @@
 const { checkRole } = require('./verify.js');
+const { Constants } = require('discord.js');
 
 
 module.exports = {
     name: 'unlock',
     description: 'Unlock a channel',
-    execute(message, args, Discord, Client, bot) {
-        const guild = bot.guilds.cache.get(message.guild.id);
+    execute(interaction, Discord, Client, bot) {
+        const arg = interaction.options.data[0];
+        const guild = bot.guilds.cache.get(interaction.guildId);
 
-        if (!checkRole(bot, guild, message.author.id)) { return message.reply('Insufficient Permissions!'); }
+        if (!checkRole(bot, guild, interaction.user.id)) { return message.reply('Insufficient Permissions!'); }
 
         var channel;
-        if (args[0]) {
-            channel = guild.channels.cache.find(channel => channel.name.toLowerCase() === args[0]);
+        if (arg) {
+            channel = arg.channel;
         } else {
-            channel = message.channel;
+            channel = interaction.channel;
         }
 
-        if (!channel) { return message.reply("This channel does not exist!"); }
+        let role = interaction.guild.roles.cache.find(r => r.name === "@everyone");
 
-        channel.permissionOverwrites.edit(message.guild.roles.everyone.id, {
+        channel.permissionOverwrites.edit(role.id, {
             VIEW_CHANNEL: true,
             SEND_MESSAGES: true,
             READ_MESSAGE_HISTORY: true,
             ATTACH_FILES: true
         });
-    }
+
+        interaction.reply(`${channel} has been unlocked!`);
+    },
+    options: [{name: 'channel', description: 'The channel to unlock (defaults to current channel)', type: Constants.ApplicationCommandOptionTypes.CHANNEL, required: false}]
 }

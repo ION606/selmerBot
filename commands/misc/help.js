@@ -1,28 +1,34 @@
 const { modHelp } = require('../admin/moderation.js');
+const { Constants } = require('discord.js');
 
 //CHANGE THIS TO FORMS?
 module.exports ={
     name: "help",
     description: "Gets help for all of Selmer Bot's commands",
-    execute(message, args, Discord, Client, bot) {
+    execute(interaction, Discord, Client, bot) {
 
         const groups = new Map([['SBspec', ['arrow', 'extracredit', 'profile', 'quotes', 'code']], ['adminCommands', [ 'setup', 'lock', 'unlock', 'serverlock' ]]]);
+        
+        var spec = "";
+        if (interaction.options.data[0]) {
+            spec = interaction.options.data[0].value;
+        }
 
-        if (args[0] == 'econ') {
+        if (spec == 'econ') {
             let temp = "***Selmer Bot Commands (Econ):***\n";
             temp += bot.commands.get('econ').econHelp();
             temp += `\n\n(remember to use _'${bot.prefix}'_ before the command!)`;
-            return message.channel.send(temp);
+            return interaction.reply({ content: temp, ephemeral: true });
 
         } 
-        else if (args[0] == 'game') {
+        else if (spec == 'game') {
             let temp = "***Selmer Bot Commands (Games):***\n";
             temp += bot.commands.get('game').allGames.join(", ");
-            temp += `\n\n(remember to use _'${bot.prefix}game'_ before the command!)`;
-            return message.channel.send(temp);
+            temp += `\n\n_Note: due to how complicated this feature is, it will not be migrated to slash commands for now_`;
+            return interaction.reply({ content: temp, ephemeral: true });
             
         }
-        else if (args[0] == 'admin') {
+        else if (spec == 'admin') {
             let temp = `__**Selmer Bot Admin Commands**__\n`
             Array.from(groups.get('adminCommands')).forEach(commName => {
                 let comm = bot.commands.get(commName);
@@ -36,7 +42,7 @@ module.exports ={
             temp += '\n_setup_ - ***SERVER OWNER ONLY*** - use _!setup help_\n';
             temp += `\n\n(remember to use _'${bot.prefix}'_ before the command!)`;
 
-            return message.channel.send(temp);
+            return interaction.reply({ content: temp, ephemeral: true });
         }
 
         let temp = "***Selmer Bot Commands:***\n";
@@ -73,6 +79,7 @@ module.exports ={
 
         temp += `\n_(remember to use '${bot.prefix}' before the command!)_`;
 
-        message.channel.send(temp);
-    }
+        interaction.reply({ content: temp, ephemeral: true });
+    },
+    options: [{name: 'command', description: 'econ, game, or admin', type: Constants.ApplicationCommandOptionTypes.STRING, required: false, choices: [ { name: 'econ', value: 'econ' }, { name: 'game', value: 'game' }, {name: 'admin', value: 'admin'} ]}]
 }

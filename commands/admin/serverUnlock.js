@@ -1,21 +1,32 @@
 // const { checkRole } = require('./verify.js');
+//Maybe add a list to selmer Bot that adds the channels when locking
 
+module.exports = {
+    name: 'serverunlock',
+    description: 'unlocks the channels locked using /serverlock',
+    execute(interaction, Discord, Client, bot) {
+        const guild = bot.guilds.cache.get(interaction.guildId);
+        const role = interaction.guild.roles.cache.find(r => r.name === "@everyone");
 
-// module.exports = {
-//     name: 'serverUnlock',
-//     description: 'unlocks ***ALL CHANNELS*** for everyone except the those with the "Selmer Bot Commands" role',
-//     execute(message, args, Discord, Client, bot) {
-//         const guild = bot.guilds.cache.get(message.guild.id);
+        // if (!checkRole(bot, guild, message.author.id)) { return message.reply('Insufficient Permissions!'); }
+        if (interaction.guild.ownerId != interaction.user.id) { return interaction.reply('Insufficient Permissions!'); }
 
-//         if (!checkRole(bot, guild, message.author.id)) { return message.reply('Insufficient Permissions!'); }
+        const channelIds = bot.lockedChannels.get(interaction.guildId);
 
-//         message.guild.channels.cache.forEach(ch => {
-//             channel.permissionOverwrites.edit(message.guild.roles.everyone.id, {
-//                 VIEW_CHANNEL: true,
-//                 SEND_MESSAGES: false,
-//                 READ_MESSAGE_HISTORY: false,
-//                 ATTACH_FILES: false
-//             });
-//         });
-//     }
-// }
+        if (!channelIds) { return interaction.reply("No channels to unlock..."); }
+
+        channelIds.forEach(id => {
+            const channel = guild.channels.cache.get(id);
+            channel.permissionOverwrites.edit(role.id, {
+                VIEW_CHANNEL: true,
+                SEND_MESSAGES: true,
+                READ_MESSAGE_HISTORY: true,
+                ATTACH_FILES: true
+            });
+        });
+
+        bot.lockedChannels.set(interaction.guildId, []);
+        interaction.reply(`Channels unlocked by ${interaction.user}`);
+    },
+    options: []
+}

@@ -1,23 +1,21 @@
+const { Constants } = require('discord.js');
 const scraper = require('mal-scraper');
 const search = scraper.search;
 const type = "manga";
+
+
 module.exports = {
     name: 'msearch',
     description: 'Selmer bot gives you info on a manga',
-    async execute(message, args, Discord, Client, bot) {
-        if (args.length < 1) { return message.reply("Please specify a manga!"); }
-        if (args[args.length - 1] != '~fancy' && args[args.length - 1] != '~summary' && args[args.length - 1] != '~stats') { args.push('~stats'); }
-        
-        let name = "";
-        if (args.length > 1) {
-            let i = 0;
-            while (i < args.length && args[i] != '~fancy' && args[i] != '~summary' && args[i] != '~stats') {
-                name += args[i] + " ";
-                i++;
-            }
-        }
+    async execute(interaction, Discord, Client, bot) {
+        const args = interaction.options.data;
+        const name = args.filter((arg) => { return (arg.name == 'manga'); })[0].value;
+        var style;
 
-        let cmd = args[args.length - 1];
+        if (args.length > 1) {
+            style = args.filter((arg) => { return (arg.name == 'style'); })[0].value;
+        }
+        else { style = "stats"; }
 
         try {
             search.search(type, {
@@ -25,7 +23,7 @@ module.exports = {
                 term: name
             }).then((data1) => {
                 let data = data1[0];
-                if (cmd == "~stats") {
+                if (style == "stats") {
                     const newEmbed = new Discord.MessageEmbed()
                     .setColor('#ff9900')
                     .setTitle(data.title)
@@ -38,32 +36,37 @@ module.exports = {
                         {name: 'Volumes:', value: data.vols}
                     );
                     
-                    message.channel.send({ embeds: [newEmbed] });
-                } else if (cmd == "~fancy") {
+                    interaction.reply({ embeds: [newEmbed] });
+                } else if (style == "fancy") {
                     let temp = `The ${data.type} _${data.title}_ currently has ${data.vols} volumes with ${data.nbChapters} chapters, `;
                     temp += `running from _${data.startDate.replace(/-/g, "/")}_  to  _${data.endDate.replace(/-/g, "/")}_, and has a score of ${data.score} on MyAnimeList!\n`;
                     temp += `You can read more about _${data.title}_ at ${data.url}`;
 
-                    message.channel.send(temp);
-                } else if (cmd == "~summary") {
+                    interaction.reply(temp);
+                } else if (style == "summary") {
                     //Remove the "read more." at the end
                     let temp = data.shortDescription.slice(0, -10);
                     temp += ` _read more at_ ${data.url}`;
-                    return message.channel.send(temp);
+                    return interaction.reply(temp);
                 } else {
-                    message.reply(`Unknown command, try using the format '${bot.prefix}msearch <manga name> [~stats or ~fancy or ~summary]`);
+                    interaction.reply(`Unknown command, try using the format '${bot.prefix}msearch <manga name> [stats or fancy or summary]`);
                 }
             });
         } catch (err) {
             if (err.message.indexOf('MessageEmbed field values must be non-empty strings') != -1) {
-                message.reply(`Insufficient information on website!\nThe page can be found here: ${data.url}`);
+                interaction.reply(`Insufficient information on website!\nThe page can be found here: ${data.url}`);
             } else {
-                message.reply("Uh oh, an unknown error occured, click the ✅ to report this!");
+                const m = interaction.reply("Uh oh, an unknown error occured, click the ✅ to report this!");
+                
                 const { addComplaintButton } = require('../dev only/submitcomplaint');
-                addComplaintButton(bot, message);
+                m.then((msg) => {
+                    addComplaintButton(bot, msg);
+                });
             }
 
             console.log(err);
         }
-    }
+    },
+    options: [{name: 'manga', description: 'The name of the manga', type: Constants.ApplicationCommandOptionTypes.STRING, required: true}, {name: 'style', description: 'stats or fancy or summary (defaults to stats)', type: Constants.ApplicationCommandOptionTypes.STRING, required: false, choices: [ { name: 'stats', value: 'stats' }, { name: 'fancy', value: 'fancy' }, {name: 'summary', value: 'summary'} ] }]
+
 }

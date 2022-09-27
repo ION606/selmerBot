@@ -365,21 +365,21 @@ function turnPage(bot, interaction) {
 module.exports = {
     name: "reminders",
     description: "Have Selmer Bot remind you - premium feature",
-    execute(message, args, Discord, Client, bot) {
+    execute(interaction, Discord, Client, bot) {
         //Check if the user has premium
         bot.mongoconnection.then(async (client) => {
             const dbo = client.db('main').collection('authorized');
-            dbo.find({ discordID: message.author.id }).toArray((err, docs) => {
+            dbo.find({ discordID: interaction.user.id }).toArray((err, docs) => {
 
                 //Only available to Selmer Bot devs, testers and "authorized" users
                 if (docs[0] != undefined) {
                     //Execute the command
                     const row = new MessageActionRow()
 
-                    if (message.channel.type == 'DM') {
+                    if (interaction.channel.type == 'DM') {
                         row.addComponents(
                             new MessageButton()
-                                .setCustomId(`newEvent|User|${message.author.id}`)
+                                .setCustomId(`newEvent|User|${interaction.user.id}`)
                                 .setLabel('New Personal Reminder')
                                 .setStyle('SUCCESS'),
                             new MessageButton()
@@ -390,7 +390,7 @@ module.exports = {
                     } else {
                         row.addComponents(
                             new MessageButton()
-                                .setCustomId(`newEvent|User|${message.author.id}`)
+                                .setCustomId(`newEvent|User|${interaction.user.id}`)
                                 .setLabel('New Personal Reminder')
                                 .setStyle('SUCCESS'),
                             new MessageButton()
@@ -404,11 +404,12 @@ module.exports = {
                         );
                     }
 
-                    return message.channel.send({ content: 'Please select an action\n_Notes: Adding offset to an event is only supported on the website and personal reminders can be viewed in DM\'s_', components: [row] });
+                    return interaction.reply({ content: 'Please select an action\n_Notes: Adding offset to an event is only supported on the website and personal reminders can be viewed in DM\'s_', components: [row] });
                 } else {
-                    message.reply("You have to be a premium subscriber to use this feature!\n_support coming soon_");
+                    interaction.reply("You have to be a premium subscriber to use this feature!\n_support coming soon_");
                 }
             });
         });
-    }, modalHandle, turnPage
+    }, modalHandle, turnPage,
+    options: []
 }

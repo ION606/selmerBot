@@ -103,7 +103,7 @@ module.exports = {
     name: 'chat',
     description: 'chat',
     convoManager,
-    execute(message, args, Discord, Client, bot) {
-        message.reply("Please DM Selmer bot to use this command!");
+    execute(interaction, args, Discord, Client, bot) {
+        interaction.reply("Please DM Selmer bot to use this command!");
     }
 }

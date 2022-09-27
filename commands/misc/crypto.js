@@ -1,4 +1,4 @@
-const { Formatters, MessageEmbed } = require('discord.js');
+const { Formatters, MessageEmbed, Constants } = require('discord.js');
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 
@@ -72,5 +72,6 @@ module.exports = {
             console.error(err);
             return message.reply("Uh Oh! There's been an error!");
         }
-    }
+    },
+    options: [{name: 'qeury', description: 'Name or List', type: Constants.ApplicationCommandOptionTypes.STRING, required: true}]
 }

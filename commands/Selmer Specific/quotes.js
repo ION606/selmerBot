@@ -1,7 +1,7 @@
 module.exports = {
     name: 'quotes',
     description: "A public version of Extra Credit",
-    execute(message, args, Discord, Client, bot) {
+    execute(interaction, Discord, Client, bot) {
         let dm;
         let num = Math.floor(Math.random() * 10);
         
@@ -41,6 +41,7 @@ module.exports = {
             break;
         }
 
-        message.channel.send(dm);
-    }
+        interaction.reply(dm);
+    },
+    options: []
 }

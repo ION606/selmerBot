@@ -1,5 +1,5 @@
 //#region imports
-const { Client, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const fs = require('fs');
@@ -13,6 +13,8 @@ const { handle_interaction } = require('./commands/interactionhandler.js');
 const { handle_dm } = require('./commands/dm_handler');
 const { devCheck } = require('./commands/dev only/devcheck.js');
 const { moderation_handler } = require('./commands/admin/moderation.js');
+const { registerCommands } = require('./registerCommands.js');
+const { backupLists, loadBotBackups } = require('./commands/admin/backupBot.js');
 const { exit } = require('process');
 //#endregion
 
@@ -29,6 +31,7 @@ let debug_channel;
 
 let MLAIKEY;
 let StripeAPIKey;
+let youtubeAPIKey;
 
 if (process.env.token != undefined) {
     //Use "setx NAME VALUE" in the local powershell terminal to set
@@ -37,6 +40,7 @@ if (process.env.token != undefined) {
     debug_channel = process.env.debug_channel;
     MLAIKEY = process.env.MLAIKEY;
     StripeAPIKey = process.env.StripeAPIKey;
+    youtubeAPIKey = process.env.youtubeAPIKey;
 } else {
     token = require('./config.json').token;
     home_server = require('./config.json').home_server;
@@ -44,8 +48,8 @@ if (process.env.token != undefined) {
 
     MLAIKEY = require('./config.json').MLAIKEY;
     StripeAPIKey = require('./config.json').StripeAPIKey;
+    youtubeAPIKey = require('./config.json').youtubeAPIKey;
 
-    // { token, home_server, debug_channel, MLAIKEY, StripeAPIKey } = require('./config.json'); // Doesn't work
     IDM = true;
 }
 
@@ -74,6 +78,7 @@ bot.inDebugMode = IDM;
 bot.home_server = home_server;
 bot.debug_channel = debug_channel;
 bot.inviteLink = 'https://discord.com/oauth2/authorize?client_id=944046902415093760&scope=applications.commands+bot&permissions=549755289087';
+bot.youtubeAPIKey = youtubeAPIKey;
 
 const configuration = new Configuration({
     apiKey: MLAIKEY,
@@ -85,6 +90,7 @@ bot.stripe = Stripe(StripeAPIKey);
 //The first thing will be an audioPlayer(), the second a queue
 bot.audioData = new Map();
 
+bot.lockedChannels = new Map();
 
 //#region MongoDB integration
 //Development support
@@ -99,9 +105,24 @@ bot.mongouri = mongouri;
 const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 bot.mongoconnection = client.connect();
 
-const { connect } = require('mongoose');
-
 //#endregion MongoDB Integration end
+
+
+//#region PROCESS STUFF
+loadBotBackups(bot, IDM);
+process.on("SIGTERM", (signal) => {
+    console.log(`Process ${process.pid} received a SIGTERM signal`);
+    backupLists(bot, IDM);
+    // process.exit(0);
+});
+
+process.on("SIGINT", (signal) => {
+    console.log(`Process ${process.pid} has been interrupted`);
+    backupLists(bot, IDM);
+    // process.exit(0);
+});
+
+//#endregion
 
 
 //#region set up bot commands
@@ -152,6 +173,8 @@ let xp_collection = new Map();
 let items;
 
 bot.on('ready', async () => {
+    registerCommands(bot);
+
     //Make then copy the shop
     bot.mongoconnection.then(client => {
         const shop = client.db("main").collection("shop");
@@ -192,7 +215,27 @@ bot.on('ready', async () => {
 
 //Button Section
 bot.on('interactionCreate', async interaction => {
-    handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection);
+    const { commandName } = interaction;
+    bot.lockedChannels.set(interaction.guildId, ["NUMBERS HERE"]);
+    // console.log(bot.lockedChannels);
+    //Slash commands
+    if (interaction.isApplicationCommand()) {
+        const logable = ['kick', 'ban', 'unban', 'mute', 'unmute', 'timeout'];
+        const econList = ["buy", 'shop', 'work', 'rank', 'inventory', 'balance', 'sell'];
+
+        if (logable.includes(commandName)) {
+            moderation_handler(bot, interaction, commandName);
+        } else if (econList.includes(commandName)) {
+            bot.commands.get('econ').execute(bot, interaction, Discord, mongouri, items, xp_collection);
+        }
+        else if (bot.commands.has(commandName)) {
+            bot.commands.get(commandName).execute(interaction, Discord, Client, bot);
+        } else {
+            interaction.reply("Unknown command detected!");
+        }
+    } else {
+        handle_interaction(interaction, mongouri, turnManager, bot, STATE, items, xp_collection);
+    }
 });
 
 
@@ -276,6 +319,7 @@ bot.on("guildDelete", guild => {
 
 //Welcome new members
 bot.on('guildMemberAdd', async (member) => {
+    if (member.guild.id == bot.home_server && !bot.inDebugMode) { return; }
 
     //Check for impartial data
     if(member.partial) await member.fetch();
@@ -286,6 +330,8 @@ bot.on('guildMemberAdd', async (member) => {
         const dbo = client.db(member.guild.id).collection('SETUP');
 
         dbo.find({_id: 'WELCOME'}).toArray(async (err, docs) => {
+            if (!docs) { return; }
+
             var welcomechannel;
             if (docs[0].welcomechannel == null) {
                 welcomechannel = guild.channels.cache.find(channel => channel.name.toLowerCase() === 'welcome');
@@ -320,35 +366,23 @@ bot.on('messageCreate', (message) => {
     //Special case, testing server (still need the emojis and error logging)
     if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
 
-    //COMMAND AREA
     //Check if the prefix exists
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-    const args = message.content.slice(prefix.length).split(' ');
-    const command = args.shift().toLowerCase();
-
-    //Log logable commands then execute them
-    const logable = ['kick', 'ban', 'unban', 'mute', 'unmute', 'timeout'];
-    if (logable.includes(command)) {
-        moderation_handler(bot, message, args, command);
-    }
-
-    //Performes the command
-    //Admin section
-    else if (command == 'reactionrole') { bot.commands.get(command).execute(message, args, Discord, bot); }
-
-    else if(bot.commands.has(command) && command != 'ECON') {
-        //Database access is required, change the inputs
-        if (command == 'game' || command == 'accept' || command == 'setup') {
+    if (!message.content.startsWith(prefix) || message.author.bot) {
+        //Use for the leveling-by-interaction system
+        return;
+    } else {
+        //Game section (too complicated to move to Slash Commands)
+        //Note: Slash commands do not register as valid replies
+        const args = message.content.slice(prefix.length).split(' ');
+        const command = args.shift().toLowerCase();
+        if (command == 'game' || command == 'accept') {
             bot.commands.get(command).execute(bot, message, args, command, Discord, mongouri, items, xp_collection);
-        } else {
-            bot.commands.get(command).execute(message, args, Discord, Client, bot);
+        } else if (command == 'rss' && bot.inDebugMode) {
+            const rss = require('./side projects/RSSHandlers/rssFeed.js');
+            rss.execute(message, args, Discord, client, bot);
         }
     }
-
-    //Econ and also the catch statement
-    else { bot.commands.get('econ').execute(bot, message, args, command, Discord, mongouri, items, xp_collection); }
-})
+});
 
 //#endregion
 

@@ -3,9 +3,10 @@
 https://selmer-bot-listener.ion606.repl.co
 --------------------------------------------------
 */
+//@ts-check
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const { MessageActionRow, MessageSelectMenu } = require('discord.js');
+const { MessageActionRow, MessageSelectMenu, Constants } = require('discord.js');
 const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 
@@ -79,10 +80,10 @@ async function createSubscriptionManual(bot, interaction, id, priceID) {
 }
 
 
-async function changeSubscriptionManual(bot, message) {
+async function changeSubscriptionManual(bot, interaction) {
     const stripe = bot.stripe;
     const mongouri = bot.mongouri;
-    const id = message.author.id;
+    const id = interaction.user.id;
 
     //Just in case
     if (!id) { return console.log('....What? How?'); }
@@ -102,7 +103,7 @@ async function changeSubscriptionManual(bot, message) {
                     resolve(userID);
                 } else {
                     // client.close();
-                    reject(`No user with the ID of <@${message.author.id}>`);
+                    reject(`No user with the ID of <@${interaction.user.id}>`);
                 }
             });
         });
@@ -112,22 +113,22 @@ async function changeSubscriptionManual(bot, message) {
             customer: userID,
             return_url: "https://linktr.ee/selmerbot",
         }).then((session) => {
-            message.reply(session.url);
+            interaction.reply(session.url);
         })
     }).catch((err) => {
 
         if (String(typeof(err)) == 'string') {
-            message.reply(err);
+            interaction.reply(err);
         } else {
             console.log(err);
-            message.reply("A Stripe error occured! Please click the ✅ to report this ASAP!");
-            addComplaintButton(bot, interaction.message);
+            interaction.reply("A Stripe error occured! Please click the ✅ to report this ASAP!");
+            addComplaintButton(bot, interaction.message); //?????????
         }
     });
 }
 
 
-function createDropDown(bot, message) {  
+function createDropDown(bot, interaction) {  
   const stripe = bot.stripe;
 
   const pl = [];
@@ -144,7 +145,7 @@ function createDropDown(bot, message) {
 
     let n = Promise.all(pl);
     let i = 0;
-    n.then((t) => { 
+    n.then((t) => {
         t.forEach(data => {
             let price = data.unit_amount/100;
             vl[i].description = `The $${price} tier`;
@@ -155,24 +156,25 @@ function createDropDown(bot, message) {
         const row = new MessageActionRow()
         .addComponents(
             new MessageSelectMenu()
-                .setCustomId(`${message.author.id}|premium`)
+                .setCustomId(`${interaction.user.id}|premium`)
                 .setPlaceholder('Nothing selected')
                 .addOptions(vl)
         );
     
-        message.channel.send({ content: `Please choose a tier`, components: [row] });
+        interaction.reply({ content: `Please choose a tier`, components: [row], ephemeral: true });
     });
   });
 }
 
 
-function handleInp(bot, message) {
-    if (message.content == '!premium' || message.content == '!premium help') {
-      message.reply('Use _!premium buy_ to get premium or use _!premium manage_ to change or cancel your subscription\n\n_Disclaimer: Selmer Bot uses Stripe to manage payments. Read more at *https://stripe.com/ *_');
-    } else if (message.content == '!premium buy') {
-      createDropDown(bot, message);
-    } else if (message.content == '!premium manage') {
-      changeSubscriptionManual(bot, message);
+function handleInp(bot, interaction) {
+    const inp = interaction.options.data[0];
+    if (!inp || inp.value == 'help') {
+      interaction.reply({content: 'Use _!premium buy_ to get premium or use _!premium manage_ to change or cancel your subscription\n\n_Disclaimer: Selmer Bot uses Stripe to manage payments. Read more at *https://stripe.com/ *_', ephemeral: true});
+    } else if (inp.value == 'buy') {
+      createDropDown(bot, interaction);
+    } else if (inp.value == 'manage') {
+      changeSubscriptionManual(bot, interaction);
     }
 }
 
@@ -180,7 +182,9 @@ function handleInp(bot, message) {
 module.exports = {
   name: 'premium',
   description: 'everything payment',
-  execute(message, args, Discord, Client, bot) {
-      message.reply("Please DM Selmer bot to use this command!");
-  }, handleInp, createSubscriptionManual
+  execute(interaction, Discord, Client, bot) {
+      handleInp(bot, interaction);
+  }, handleInp, createSubscriptionManual,
+  options: [{name: 'input', description: 'What do you want to do?', type: Constants.ApplicationCommandOptionTypes.STRING, required: true, choices: [{name: 'help', value: 'help'}, {name: 'buy', value: 'buy'}, {name: 'manage', value: 'manage'}]}],
+  isDM: true
 }

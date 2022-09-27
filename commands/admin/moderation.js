@@ -1,6 +1,7 @@
 //@ts-check
 const { log, SEVCODES } = require('../log.js');
 const { checkRole } = require('./verify.js');
+const { Constants } = require('discord.js');
 
 
 function modHelp() {
@@ -15,7 +16,7 @@ function kick(guild, user) {
 }
 
 
-async function toggle_ban(guild, message, args, ban, reason) {
+async function toggle_ban(guild, interaction, args, ban, reason) {
 
     if (ban) {
         guild.members.ban(args);
@@ -27,7 +28,7 @@ async function toggle_ban(guild, message, args, ban, reason) {
             i++
         }
         return new Promise((resolve, reject) => {
-            message.guild.bans.fetch().then((users) => {
+            interaction.guild.bans.fetch().then((users) => {
                 const userObj = users.filter((u) => {
                     return (`${u.user.username}#${u.user.discriminator}` == user);
                 }).first();
@@ -51,29 +52,29 @@ async function toggle_ban(guild, message, args, ban, reason) {
 }
 
 
-function toggle_mute(bot, guild, command, message, user, reason, mute) {
+function toggle_mute(bot, guild, command, interaction, user, reason, mute) {
     const mutedRole = guild.roles.cache.find((role) => role.name.toLowerCase() === 'muted');
        const guser = guild.members.cache.get(user.id);
        // if there is no `Muted` role, send an error
-       if (!mutedRole) { return message.channel.send('There is no "muted" role on this server. Please create one then try again'); }
+       if (!mutedRole) { return interaction.reply('There is no "muted" role on this server. Please create one then try again'); }
 
        if (mute) {
             if (guser.roles.cache.get(mutedRole.id) == undefined) {
                 guser.roles.add(mutedRole);
-                log(bot, message, command, user, reason, SEVCODES.low);
-            } else { message.reply("This user is already muted!"); }
+                log(bot, interaction, command, user, reason, SEVCODES.low);
+            } else { interaction.reply("This user is already muted!"); }
        } else {
             if (guser.roles.cache.get(mutedRole.id) != undefined) {
                 guser.roles.remove(mutedRole);
-                log(bot, message, command, user, reason, SEVCODES.none);
-            } else { message.reply("This user is not muted!"); }
+                log(bot, interaction, command, user, reason, SEVCODES.none);
+            } else { interaction.reply("This user is not muted!"); }
        }
 
        /*
         NOTE: use the following function for a "time out" type thing?
         setTimeout(() => {
             target.roles.remove(mutedRole); // remove the role
-        }, <time>) 
+        }, <time>)
        */
 }
 
@@ -94,43 +95,47 @@ function timeOut(bot, user, message, args, command, reason) {
 }
 
 
-function moderation_handler(bot, message, args, command) {
-    const guild = message.guild;
+function moderation_handler(bot, interaction, command) {
+    const guild = interaction.guild;
 
     //Verify
-    if (!checkRole(bot, guild, message.author.id)) { return message.reply('Insufficient Permission!'); }
+    if (!checkRole(bot, guild, interaction.user.id)) { return interaction.reply('Insufficient Permission!'); }
 
-    let mentioned = message.mentions.users.first();
-    if (mentioned && mentioned.id == message.author.id) { return message.reply(`You can't ${command} yourself!`); }
+    const mentioned = interaction.options.data.filter((arg) => { return (arg.name == 'user'); })[0].user;
+    if (mentioned && mentioned.id == interaction.user.id) { return interaction.reply(`You can't ${command} yourself!`); }
 
-    const reason = args.slice(1).join(' ');
+    const reasonInit = interaction.options.data.filter((arg) => { return (arg.name == 'reason'); })[0];
+    const reason = (reasonInit) ? reasonInit.value : "None";
 
-    if (message.mentions.members.first() && (message.mentions.members.first().roles.highest.position > message.guild.members.resolve(bot.user).roles.highest.position)) {
-        return message.reply("I'm not high enough in the role hierarchy to do that!\n_To raise my place, go to **Server Settings -> Roles** then drag me up!_");
+    const user = guild.members.resolve(mentioned.id);
+
+    if (user && (user.roles.highest.position > guild.members.resolve(bot.user).roles.highest.position)) {
+        return interaction.reply("I'm not high enough in the role hierarchy to do that!\n_To raise my place, go to **Server Settings -> Roles** then drag me up!_");
     }
+
     
-    if (command != 'unban' && !mentioned || !reason) { return message.channel.send(`Please use the following format: _!<command> <user> <reason>`); }
-    if (command == 'unban' && !args[0] && !reason) { return message.channel.send("Please use the following format: _!unban <user_tag>#<user_discriminator> <reason>\nExample: _!unban John#1122_"); }
+    // if (command != 'unban' && !mentioned || !reason) { return message.channel.send(`Please use the following format: _!<command> <user> <reason>`); }
+    // if (command == 'unban' && !args[0] && !reason) { return message.channel.send("Please use the following format: _!unban <user_tag>#<user_discriminator> <reason>\nExample: _!unban John#1122_"); }
     // if (command == 'ban' && guild.members.cache.get(mentioned.id).bannable) { message.reply("This user is not bannable!"); } //Broken
     // if (command == 'ban' && !message.guild.members.cache.get(mentioned.id)) { message.reply("This user is not in the server"); }
 
     switch (command) {
         case 'kick': kick(guild, mentioned);
-        log(bot, message, command, mentioned, reason, SEVCODES.medium);
+        log(bot, interaction, command, mentioned, reason, SEVCODES.medium);
         break;
 
-        case 'ban': toggle_ban(guild, message, mentioned, true, reason);
-        log(bot, message, command, mentioned, reason, SEVCODES.high);
+        case 'ban': toggle_ban(guild, interaction, mentioned, true, reason);
+        log(bot, interaction, command, mentioned, reason, SEVCODES.high);
         break;
 
         //Leave the then() catch() thing, it needs to be async
-        case 'unban': toggle_ban(guild, message, args, false, reason).then((user) => { log(bot, message, command, user, reason, SEVCODES.none)}).catch((note) => { message.reply(note); });
+        case 'unban': toggle_ban(guild, interaction, false, reason).then((user) => { log(bot, interaction, command, user, reason, SEVCODES.none)}).catch((note) => { interaction.reply(note); });
         break;
 
-        case 'mute': toggle_mute(bot, guild, command, message, mentioned, reason, true);
+        case 'mute': toggle_mute(bot, guild, command, interaction, mentioned, reason, true);
         break;
         
-        case 'unmute': toggle_mute(bot, guild, command, message, mentioned, reason, true);
+        case 'unmute': toggle_mute(bot, guild, command, interaction, mentioned, reason, true);
         break;
 
         // case 'timeout': timeOut(bot, mentioned, message, args, command, reason);
@@ -143,5 +148,5 @@ function moderation_handler(bot, message, args, command) {
 
 module.exports = { 
     name: 'moderation',
-    moderation_handler, modHelp
+    moderation_handler, modHelp,
 }
