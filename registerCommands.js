@@ -76,6 +76,40 @@ function registerCommands(bot) {
         //     comm.setDefaultMemberPermissions(Discord.PermissionFlagsBits.KickMembers | Discord.PermissionFlagsBits.BanMembers);
         // });
     }
+
+    //Admin commands (Home Server only)
+    const guild = bot.guilds.cache.get(bot.home_server);
+    guild.commands.create({
+        name: "admin",
+        description: "admin commands",
+        // type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND_GROUP,
+        options: [
+            {
+                name: "setpresence",
+                description: "Change the bot's presence",
+                type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+                options: [
+                    {name: "pres_text", description: "The new presence text", type: Constants.ApplicationCommandOptionTypes.STRING, required: true },
+                    {name: "type", description: "The new presence text", type: Constants.ApplicationCommandOptionTypes.STRING, required: true, choices: [
+                        {name: "LISTENING", value: "LISTENING"}, {name: "WATCHING", value: "WATCHING"}, {name: "COMPETING", value: "COMPETING"}, {name: "PLAYING", value: "PLAYING"}, { name: "STREAMING", value: "STREAMING"}
+                    ]},
+                    {name: 'display_name', description: "What to display instead of the stream's title", type: Constants.ApplicationCommandOptionTypes.STRING, required: false}
+                ],
+                dm_permission: false
+            },
+            {
+                name: "setactivity",
+                description: "Change the bot's activity",
+                type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND,
+                options: [
+                    {name: "type", description: "The new presence text", type: Constants.ApplicationCommandOptionTypes.STRING, required: true, choices: [
+                        {name: "Do Not Disturb", value: "dnd"}, {name: "Idle", value: "idle"}, {name: "invisible", value: "invisible"}, {name: "online", value: "online"}
+                    ]},
+                ],
+                dm_permission: false
+            },
+        ]
+    });
 }
 
 

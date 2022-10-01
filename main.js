@@ -15,6 +15,7 @@ const { devCheck } = require('./commands/dev only/devcheck.js');
 const { moderation_handler } = require('./commands/admin/moderation.js');
 const { registerCommands } = require('./registerCommands.js');
 const { backupLists, loadBotBackups } = require('./commands/admin/backupBot.js');
+const { setPresence } = require('./commands/dev only/setPresence.js');
 const { exit } = require('process');
 //#endregion
 
@@ -184,9 +185,15 @@ bot.on('ready', async () => {
             items = [...itemstemp];
         });
 
-        //Srt status and Activity (idle and listening to !help)
-        bot.user.setActivity(`${bot.prefix}help`, { type: "LISTENING" });
-        // bot.user.setStatus('idle');
+
+        bot.user.setStatus('idle');
+        //Why doesn't this work?
+        // bot.user.setPresence({
+        //     status: 'online', activity: {
+        //         name: "It's only logical!",
+        //         type: "LISTENING"
+        //     }
+        // });
     });
 
     //Note the xp numbers are a little wonky on levels 6, 8 and 13 (why though?)
@@ -216,14 +223,22 @@ bot.on('ready', async () => {
 //Button Section
 bot.on('interactionCreate', async interaction => {
     const { commandName } = interaction;
-    bot.lockedChannels.set(interaction.guildId, ["NUMBERS HERE"]);
     // console.log(bot.lockedChannels);
     //Slash commands
     if (interaction.isApplicationCommand()) {
         const logable = ['kick', 'ban', 'unban', 'mute', 'unmute', 'timeout'];
         const econList = ["buy", 'shop', 'work', 'rank', 'inventory', 'balance', 'sell'];
+        const adminList = ["setpresence", "setactivity"];
 
-        if (logable.includes(commandName)) {
+        if (commandName == "admin" && adminList.includes(interaction.options.data[0].name)) {
+            if (interaction.user.id == bot.guilds.cache.get(bot.home_server).ownerId) {
+                setPresence(bot, interaction);
+            } else {
+                return interaction.reply({ content: "HAHAHAHAHAHAHAHAHAHAHA\n\nno.", ephemeral: true }).catch((err) => {
+                    interaction.channel.send({ content: "HAHAHAHAHAHAHAHAHAHAHA\n\nno.", ephemeral: true });
+                });
+            }
+        } else if (logable.includes(commandName)) {
             moderation_handler(bot, interaction, commandName);
         } else if (econList.includes(commandName)) {
             bot.commands.get('econ').execute(bot, interaction, Discord, mongouri, items, xp_collection);

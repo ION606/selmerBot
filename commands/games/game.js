@@ -1,5 +1,7 @@
 // // @ts-check //Disabled
 
+// Maybe have the interaction type be "user" https://canary.discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-types
+
 const { MongoClient, ServerApiVersion } = require('mongodb');
 let ecoimport = require("../db/econ.js");
 
@@ -20,7 +22,7 @@ const { chooseClass, presentClasses } = require('./game_classes.js');
 
 //Has a list of all games (used to change player state)
 const allGames = ['battle', 'Tic Tac Toe'];
-// const { NULL } = require('mysql/lib/protocol/constants/types');
+
 
 
 //#region functions (NOT GAME SPECIFIC)
