@@ -404,7 +404,7 @@ module.exports = {
                         );
                     }
 
-                    return interaction.reply({ content: 'Please select an action\n_Notes: Adding offset to an event is only supported on the website and personal reminders can be viewed in DM\'s_', components: [row] });
+                    return interaction.reply({ content: 'Please select an action\n_Notes: Adding offset to an event is only supported on the website and personal reminders can be viewed in DM\'s_', components: [row], ephemeral: true });
                 } else {
                     interaction.reply("You have to be a premium subscriber to use this feature!\n_support coming soon_");
                 }

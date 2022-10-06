@@ -1,6 +1,18 @@
 const hastebin = require("hastebin-gen");
 const { addComplaintButton } = require('../dev only/submitcomplaint');
 const { Constants } = require('discord.js');
+const { URL } = require("url");
+
+
+function isValidUrl(s) {
+    try {
+        new URL(s);
+        return true;
+    } catch (err) {
+        return false;
+    }
+};
+
 
 module.exports ={
     name: "scrape",
@@ -9,6 +21,13 @@ module.exports ={
         const axios = require('axios');
         // const cheerio = require('cheerio');
         const url = interaction.options.data[0].value;
+
+        if (!isValidUrl(url)) {
+          return interaction.reply("Please enter a valid url").catch((err) => {
+            interaction.channel.send("Please enter a valid url");
+          });
+        }
+
         axios(url)
           .then(async response => {
             const html = response.data;

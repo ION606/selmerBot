@@ -14,7 +14,7 @@ const { handle_dm } = require('./commands/dm_handler');
 const { devCheck } = require('./commands/dev only/devcheck.js');
 const { moderation_handler } = require('./commands/admin/moderation.js');
 const { registerCommands } = require('./registerCommands.js');
-const { backupLists, loadBotBackups } = require('./commands/admin/backupBot.js');
+const { backupLists, loadBotBackups } = require('./commands/dev only/backupBot.js');
 const { setPresence } = require('./commands/dev only/setPresence.js');
 const { exit } = require('process');
 //#endregion

@@ -47,7 +47,7 @@ async function backupLists(bot, IDM) {
 async function loadBotBackups(bot, IDM) {
     try {
         if (IDM) {
-            const botBackups = require('./backup.json').backups;
+            const botBackups = require('../admin/backup.json').backups;
             bot.lockedChannels = objToMap(botBackups.locked);
         } else {
             bot.lockedChannels = objToMap(JSON.parse(botBackups.locked));

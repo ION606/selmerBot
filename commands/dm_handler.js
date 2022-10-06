@@ -27,9 +27,11 @@ function handle_dm(message, bot) {
         handleInp(bot, message);
     } else if (message.content.indexOf('!reminders') != -1) {
         reminders.execute(message, null, null, null, bot);
-    } else if (message.content.indexOf('!repo') != -1 || message.content.indexOf('!code') != -1) {
-        repo.execute(message, null, null, null, bot);
     }
+    
+    // else if (message.content.indexOf('!repo') != -1 || message.content.indexOf('!code') != -1) {
+    //     repo.execute(message, null, null, null, bot);
+    // }
     
     else {
         return message.reply('UNUSABLE DM COMMAND DETECTED');

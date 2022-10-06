@@ -7,7 +7,7 @@ const tutoText = [
     "__**SETUP AND LOGGING**__\nSet up your server to take full advantage of Selmer Bot's features, this includes moderation logging, custom welcome messages, calendar event pings and more\n_Note: Most of these commands are only available to the server owner_\n\n__***COMMANDS***__\nsetup",
     "__**ECONOMY**__\nThese commands have to do with the inventory and currency system Selmer Bot uses, although I should note that as of now Selmer Coin holds no IRL value ;-;\n\n__***COMMANDS***__\ninventory, buy, sell, shop, work, rank, balance",
     "__**MODERATION**__\nI mean....\n\n***__COMMANDS__***\nhelp admin, warn, mute, unmute, kick, ban, unban, lock, unlock, serverlock\n\n__***NOTE:***__\nThe user needs to have either _kick_ or _ban_ permissions to use these",
-    "__**AMIME AND MANGA**__\nGet info on your favorite Anime or Manga as a stat-sheet, a fancy embed, or have Selmer Bot describe it to you\n__***COMMANDS***__\nasearch, msearch",
+    "__**AMIME AND MANGA**__\nGet info on your favorite Anime or Manga as a stat-sheet, a fancy embed, or have Selmer Bot describe it to you\n\n__***COMMANDS***__\nasearch, msearch",
     "__**GAMES**__\nAt the moment Selmer Bot offers three games: Trivia, Tic Tac Toe, and Minesweeper. Both Trivia and Tic Tac Toe can be played with other people. Trivia and Minesweeper can also be played solo. Selmer Bot also has a battle game where you can use weapons, potions, attack and defend, but this is still in beta\n\n__***COMMANDS***__\nhelp game, game battle game tictactoe, game trivia, game equip, game status, game hp, game classes, game quit\n\n__**NOTE**__\nDue to how complicated this feature is, it will not be migrated to slash commands for now",
     "__**SELMER SPECIFIC**__\nThese commands will probably be found nowhere else\nThese include quotes (For legal reasons I have to state they aren't real quotes, mostly), as well as varius other things I based on good old Selmer\n\n__***COMMANDS***__\narrow, extracredit, tuto, profile, quotes",
     "__**MISCELLANEOUS**__\nThese are the commands that are not really in any of the other categories. Don't be fooled, these are actually some of the most useful commands Selmer Bot has to offer. From playing music to web scraping to memes, I'm sure Selmer Bot has what you're looking for\n\n__***COMMANDS***__\nhelp, kareoke, link, meme, pickupline, audio, react, scrape, stocks, crypto",
@@ -68,7 +68,7 @@ function postEmbd(bot, interaction, page, refered) {
     if (page > 0 || refered) {
         interaction.update({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [te], components: [row] });
     } else {
-        interaction.reply({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [te], components: [row] });
+        interaction.channel.send({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [te], components: [row] });
     }
 }
 

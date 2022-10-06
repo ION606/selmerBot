@@ -5,7 +5,7 @@ module.exports = {
     description: 'See where Selmer bot\'s code is stored!',
     execute(interaction, Discord, Client, bot) {
         const embd = new MessageEmbed()
-        .setAuthor({ name: "Selmer Bot", url: bot.inviteLink, iconURL: bot.user.displayAvatarURL() })
+        .setAuthor({ name: "Selmer Bot", url: bot.user.inviteLink, iconURL: bot.user.displayAvatarURL() })
         .setThumbnail("https://github.com/ION606/selmer-bot-website/blob/main/assets/Selmer-icon.png?raw=true")    // .setThumbnail('https://repository-images.githubusercontent.com/460670550/43932b23-d795-4334-838f-f33ee8f795c4')
         .setDescription("Selmer Bot was created by ION606");
 
@@ -28,5 +28,6 @@ module.exports = {
         ]);
 
         interaction.reply({ embeds: [embd], components: [row] });
-    }, options: []
+    }, options: [],
+    isDm: true
 }

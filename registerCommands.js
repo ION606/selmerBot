@@ -17,9 +17,8 @@ function registerCommands(bot) {
         key: code
     */
     bot.commands.forEach((val, key) => {
-
-        if (val.options && val.name != 'econ') {
-            if (val.isDM) {
+        if ((val.options && val.name != 'econ') || val.isDm) {
+            if (val.isDm) {
                 commands.create({
                     name: val.name,
                     description: val.description,

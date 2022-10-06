@@ -18,10 +18,11 @@ getAllCoins();
 module.exports = {
     name: 'crypto',
     description: 'Get the prices for most cryptocurrencies!',
-    async execute(message, args, Discord, Client, bot) {
-        if (args.length < 1 || args[0] == 'help') {
-            return message.reply("Please specify at least one cryptocurrency (_ex: !crypto BTC_) or list all currencies (_!crypto list_)");
-        } else if (args[0] == 'list') {
+    async execute(interaction, Discord, Client, bot) {
+        const args = interaction.options.data;
+        if (args.length < 1 || args[0].value == 'help') {
+            return interaction.reply("Please specify at least one cryptocurrency (_ex: !crypto BTC_) or list all currencies (_!crypto list_)");
+        } else if (args[0].value == 'list') {
             try {
                 return new Promise((resolve, reject) => {
                     let temp = "```Name --> Symbol\n\n";
@@ -32,11 +33,11 @@ module.exports = {
                     
                     resolve(temp);
                 }).then((temp) => {
-                    message.reply(temp);
+                    interaction.reply(temp);
                 })
             } catch (err) {
                 console.error(err);
-                return message.reply("Uh Oh! There's been an error!");
+                return interaction.reply("Uh Oh! There's been an error!");
             }
         }
         
@@ -47,7 +48,7 @@ module.exports = {
 
             var datacc = data.data.tickers.filter(t => t.target == 'USD');
 
-            const temp = datacc.filter(t => t.base == args[0]);
+            const temp = datacc.filter(t => t.base == args[0].value);
             const res = temp.length == 0 ? [] : temp[0];
 
             //price: res.last, symbol: base, trust score: trust_score
@@ -67,11 +68,11 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: 'Selmer Bot uses CoinGecko for cryptocurrency information'});
 
-                message.reply({ embeds: [embd] });
+                interaction.reply({ embeds: [embd] });
         } catch (err) {
             console.error(err);
-            return message.reply("Uh Oh! There's been an error!");
+            return interaction.reply("Uh Oh! There's been an error!");
         }
     },
-    options: [{name: 'qeury', description: 'Name or List', type: Constants.ApplicationCommandOptionTypes.STRING, required: true}]
+    options: [{name: 'query', description: 'Name or List', type: Constants.ApplicationCommandOptionTypes.STRING, required: true}]
 }

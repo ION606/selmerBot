@@ -91,7 +91,7 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 mswpr.handle(bot, interaction, interaction.channel, interaction.message, null, xp_collection);
             } else if (interaction.customId.indexOf("sbtutorial") != -1) {
                 interaction.deferUpdate();
-                tuto.execute(interaction.message, null, null, null, bot);
+                tuto.execute(interaction, null, null, bot);
             } //Button else ifs here
         });
     }
