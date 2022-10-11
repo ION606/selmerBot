@@ -190,57 +190,78 @@ function addEvent(obj, connection, interaction, embd) {
     }
 }
 
+/**
+ * @returns { Promise<[]> | Promise<[false, []] | [true, String]>} (all events) || (custom err) ? [true, err] : [false, err]
+ */
+function getEvents(bot, interaction, id, jpage = 0, isGuild = false, refered = false, isExport = false) {
+    return new Promise((resolve, reject) => {
+        var userId = false;
+        var guildId = false;
+        const numperpage = 5;
 
-function getEvents(bot, interaction, id, jpage = 0, isGuild = false, refered = false) {
-    var userId = false;
-	var guildId = false;
-    const numperpage = 5;
+        if (isGuild) {
+            guildId = id;
+        } else {
+            userId = id;
+        }
 
-    if (isGuild) {
-        guildId = id;
-    } else {
-        userId = id;
-    }
+        bot.mongoconnection.then((client) => {
+            try {
+                var times;
+                const dbo = client.db('main').collection('reminderKeys');
 
-    bot.mongoconnection.then((client) => {
-        try {
-            var times;
-            const dbo = client.db('main').collection('reminderKeys');
-
-            //ReminderKeys are all stored as userId, the reminders themselves are not
-            dbo.findOne({$or: [ {userId: userId}, {userId: guildId} ]}).then((doc) => {
-                if (!doc) { return interaction.reply("No events exist!"); }
-                times = doc.times;
-                const tbo = client.db('main').collection('reminders');
-                
-                tbo.find({time: {$in: times}}).toArray((err, docs) => {
-                    //There's gotta be a better way
-                    var temp = [""];
-                    var page = 0;
-
-                    for (let i = 0; i < docs.length; i ++) {
-                        if (i != 0 && i % numperpage == 0) {
-                            page ++;
-                            temp[page] = '';
+                //ReminderKeys are all stored as userId, the reminders themselves are not
+                dbo.findOne({$or: [ {userId: userId}, {userId: guildId} ]}).then((doc) => {
+                    if (!doc) {
+                        if (isExport) {
+                            return reject([true, "No events exist!"]);
                         }
-                        // temp += `__***Events On ${new Date(Number(docs[i].time))}***__\n\n`;
-                        for (let j in docs[i]) {
-                            if (!isNaN(j) && (docs[i][j].userId == userId || docs[i][j].guildId == guildId)) {
-                                const obj = docs[i][j];
-                                temp[page] += `Name: ${obj.name}\nDescription: ${obj.description}\nDate/Time: ${new Date(Number(docs[i].time))}\nOffset: ${obj.offset}\nLink: ${obj.link}\nLocation: ${obj.location}\n------------------------------\n`
-                            }
-                        }
+
+                        return interaction.reply("No events exist!");
                     }
 
-                    //Create the embed
-                    postEmbd(bot, temp, interaction, jpage, isGuild, id, refered);
+                    times = doc.times;
+                    const tbo = client.db('main').collection('reminders');
+                    
+                    tbo.find({time: {$in: times}}).toArray((err, docs) => {
+
+                        if (isExport) {
+                            return resolve(docs);
+                        }
+
+                        //There's gotta be a better way
+                        var temp = [""];
+                        var page = 0;
+
+                        for (let i = 0; i < docs.length; i ++) {
+                            if (i != 0 && i % numperpage == 0) {
+                                page ++;
+                                temp[page] = '';
+                            }
+                            // temp += `__***Events On ${new Date(Number(docs[i].time))}***__\n\n`;
+                            for (let j in docs[i]) {
+                                if (!isNaN(j) && (docs[i][j].userId == userId || docs[i][j].guildId == guildId)) {
+                                    const obj = docs[i][j];
+                                    temp[page] += `Name: ${obj.name}\nDescription: ${obj.description}\nDate/Time: ${new Date(Number(docs[i].time))}\nOffset: ${obj.offset}\nLink: ${obj.link}\nLocation: ${obj.location}\n------------------------------\n`
+                                }
+                            }
+                        }
+
+                        //Create the embed
+                        postEmbd(bot, temp, interaction, jpage, isGuild, id, refered);
+
+                        resolve(true);
+                    });
                 });
-            });
-        } catch (err) {
-            console.log(err);
-            return interaction.reply("Uh Oh! There's been an error!");
-        }
-	});
+            } catch (err) {
+                console.log(err);
+                if (isExport) {
+                    return reject([false, err]);
+                }
+                return interaction.reply("Uh Oh! There's been an error!");
+            }
+        });
+    });
 }
 
 //#endregion
@@ -410,6 +431,6 @@ module.exports = {
                 }
             });
         });
-    }, modalHandle, turnPage,
+    }, modalHandle, turnPage, addEvent, getEvents,
     options: []
 }

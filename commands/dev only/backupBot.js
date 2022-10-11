@@ -1,5 +1,5 @@
 const fs = require('fs');
-const {Buffer} = require('buffer');
+const { Client } = require('discord.js');
 
 function mapToObj(map){
     const obj = {}
@@ -43,7 +43,10 @@ async function backupLists(bot, IDM) {
     }
 }
 
-
+/**
+ * @param {Client} bot 
+ * @param {Boolean} IDM 
+ */
 async function loadBotBackups(bot, IDM) {
     try {
         if (IDM) {
@@ -52,6 +55,8 @@ async function loadBotBackups(bot, IDM) {
         } else {
             bot.lockedChannels = objToMap(JSON.parse(botBackups.locked));
         }
+
+        // bot.user.setActivity("RESTARTING BOT, PLEASE STAND BY.mp3", { type: "LISTENING" }); // User is....undefined????
     } catch (err) {
         console.error(err);
         bot.lockedChannels = new Map();
