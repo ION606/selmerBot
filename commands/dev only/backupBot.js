@@ -53,7 +53,7 @@ async function loadBotBackups(bot, IDM) {
             const botBackups = require('../admin/backup.json').backups;
             bot.lockedChannels = objToMap(botBackups.locked);
         } else {
-            bot.lockedChannels = objToMap(JSON.parse(botBackups.locked));
+            bot.lockedChannels = objToMap(JSON.parse(process.env.backupLists.locked));
         }
 
         // bot.user.setActivity("RESTARTING BOT, PLEASE STAND BY.mp3", { type: "LISTENING" }); // User is....undefined????
