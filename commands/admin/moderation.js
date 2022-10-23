@@ -99,51 +99,53 @@ function moderation_handler(bot, interaction, command) {
     const guild = interaction.guild;
 
     //Verify
-    if (!checkRole(bot, guild, interaction.user.id)) { return interaction.reply('Insufficient Permission!'); }
+    checkRole(bot, guild, interaction.user.id).then((isAllowed) => {
+        if (!isAllowed) { return interaction.reply('Insufficient Permission!'); }
 
-    const mentioned = interaction.options.data.filter((arg) => { return (arg.name == 'user'); })[0].user;
-    if (mentioned && mentioned.id == interaction.user.id) { return interaction.reply(`You can't ${command} yourself!`); }
+        const mentioned = interaction.options.data.filter((arg) => { return (arg.name == 'user'); })[0].user;
+        if (mentioned && mentioned.id == interaction.user.id) { return interaction.reply(`You can't ${command} yourself!`); }
 
-    const reasonInit = interaction.options.data.filter((arg) => { return (arg.name == 'reason'); })[0];
-    const reason = (reasonInit) ? reasonInit.value : "None";
+        const reasonInit = interaction.options.data.filter((arg) => { return (arg.name == 'reason'); })[0];
+        const reason = (reasonInit) ? reasonInit.value : "None";
 
-    const user = guild.members.resolve(mentioned.id);
+        const user = guild.members.resolve(mentioned.id);
 
-    if (user && (user.roles.highest.position > guild.members.resolve(bot.user).roles.highest.position)) {
-        return interaction.reply("I'm not high enough in the role hierarchy to do that!\n_To raise my place, go to **Server Settings -> Roles** then drag me up!_");
-    }
+        if (user && (user.roles.highest.position > guild.members.resolve(bot.user).roles.highest.position)) {
+            return interaction.reply("I'm not high enough in the role hierarchy to do that!\n_To raise my place, go to **Server Settings -> Roles** then drag me up!_");
+        }
 
-    
-    // if (command != 'unban' && !mentioned || !reason) { return message.channel.send(`Please use the following format: _!<command> <user> <reason>`); }
-    // if (command == 'unban' && !args[0] && !reason) { return message.channel.send("Please use the following format: _!unban <user_tag>#<user_discriminator> <reason>\nExample: _!unban John#1122_"); }
-    // if (command == 'ban' && guild.members.cache.get(mentioned.id).bannable) { message.reply("This user is not bannable!"); } //Broken
-    // if (command == 'ban' && !message.guild.members.cache.get(mentioned.id)) { message.reply("This user is not in the server"); }
-
-    switch (command) {
-        case 'kick': kick(guild, mentioned);
-        log(bot, interaction, command, mentioned, reason, SEVCODES.medium);
-        break;
-
-        case 'ban': toggle_ban(guild, interaction, mentioned, true, reason);
-        log(bot, interaction, command, mentioned, reason, SEVCODES.high);
-        break;
-
-        //Leave the then() catch() thing, it needs to be async
-        case 'unban': toggle_ban(guild, interaction, false, reason).then((user) => { log(bot, interaction, command, user, reason, SEVCODES.none)}).catch((note) => { interaction.reply(note); });
-        break;
-
-        case 'mute': toggle_mute(bot, guild, command, interaction, mentioned, reason, true);
-        break;
         
-        case 'unmute': toggle_mute(bot, guild, command, interaction, mentioned, reason, true);
-        break;
+        // if (command != 'unban' && !mentioned || !reason) { return message.channel.send(`Please use the following format: _!<command> <user> <reason>`); }
+        // if (command == 'unban' && !args[0] && !reason) { return message.channel.send("Please use the following format: _!unban <user_tag>#<user_discriminator> <reason>\nExample: _!unban John#1122_"); }
+        // if (command == 'ban' && guild.members.cache.get(mentioned.id).bannable) { message.reply("This user is not bannable!"); } //Broken
+        // if (command == 'ban' && !message.guild.members.cache.get(mentioned.id)) { message.reply("This user is not in the server"); }
 
-        // case 'timeout': timeOut(bot, mentioned, message, args, command, reason);
-        // shouldIlog = false;
-        // break;
-        
-        default: console.log(`ERROR! Moderation Command "${command}" has somehow been used!`);
-    }
+        switch (command) {
+            case 'kick': kick(guild, mentioned);
+            log(bot, interaction, command, mentioned, reason, SEVCODES.medium);
+            break;
+
+            case 'ban': toggle_ban(guild, interaction, mentioned, true, reason);
+            log(bot, interaction, command, mentioned, reason, SEVCODES.high);
+            break;
+
+            //Leave the then() catch() thing, it needs to be async
+            case 'unban': toggle_ban(guild, interaction, false, reason).then((user) => { log(bot, interaction, command, user, reason, SEVCODES.none)}).catch((note) => { interaction.reply(note); });
+            break;
+
+            case 'mute': toggle_mute(bot, guild, command, interaction, mentioned, reason, true);
+            break;
+            
+            case 'unmute': toggle_mute(bot, guild, command, interaction, mentioned, reason, true);
+            break;
+
+            // case 'timeout': timeOut(bot, mentioned, message, args, command, reason);
+            // shouldIlog = false;
+            // break;
+            
+            default: console.log(`ERROR! Moderation Command "${command}" has somehow been used!`);
+        }
+    });
 }
 
 module.exports = { 

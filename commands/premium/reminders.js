@@ -1,5 +1,4 @@
 const { Modal, TextInputComponent, MessageActionRow, MessageButton, MessageEmbed, Interaction } = require('discord.js');
-const { checkRole } = require('../admin/verify');
 
 
 /**

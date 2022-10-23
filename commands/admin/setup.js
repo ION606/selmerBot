@@ -86,6 +86,19 @@ async function execute(interaction, Discord, Client, bot) {
                     if (!channel) { return interaction.reply({content: 'The specified channel does not exist!', ephemeral: true}); }
 
                     dbo.updateOne({_id: 'announcement'}, { $set: { 'channel': channel.id } });
+                } else if (command == "add_mod_role") {
+                    dbo.findOne({_id: "roles"}).then((doc) => {
+                        const role = args[i].value;
+                        if (!doc.commands.includes(role)) {
+                            dbo.updateOne({_id: "roles"}, { $push: { commands: role } });
+                            interaction.reply({ content: "Role added!", ephemeral: true });
+                        } else {
+                            interaction.reply({ content: "This role is already a command role!", ephemeral: true });
+                        }
+                    });
+                } else if (command == "remove_mod_role") {
+                    dbo.updateOne({_id: "roles"}, { $pull: { commands: { $in: [ args[i].value ] }} });
+                    interaction.reply({ content: "Role removed!", ephemeral: true });
                 } else {
                     interaction.reply({content: "Please chose a valid option", ephemeral: true});
                 }
@@ -128,7 +141,9 @@ module.exports = {
         {name: 'log_channel', description: 'Sets the logging channel', type: Constants.ApplicationCommandOptionTypes.CHANNEL },
         {name: 'log_severity', description: 'Sets the logging Severity (logs this/lower tiers)', type: Constants.ApplicationCommandOptionTypes.STRING, choices: [{name: 'none', value: 'none'}, {name: 'low', value: 'low'}, {name: 'medium', value: 'medium'}, {name: 'high', value: 'high'}] },
         {name: 'announcement_role', description: 'Sets the role to be pinged for reminders', type: Constants.ApplicationCommandOptionTypes.ROLE},
-        {name: 'announcement_channel', description: 'Sets the channel for reminders', type: Constants.ApplicationCommandOptionTypes.CHANNEL}
+        {name: 'announcement_channel', description: 'Sets the channel for reminders', type: Constants.ApplicationCommandOptionTypes.CHANNEL},
+        {name: 'add_mod_role', description: 'Make a role into an admin role for Selmer Bot, able to execute ALL Selmer Bot commands', type: Constants.ApplicationCommandOptionTypes.ROLE},
+        {name: 'remove_mod_role', description: 'Remove a Selmer Bot moderation role', type: Constants.ApplicationCommandOptionTypes.ROLE}
         // {name: 'help', description: 'gets help with setup commands', type: Constants.ApplicationCommandOptionTypes.STRING, choices: [{name: 'welcome', value: 'welcome'}, {name: 'logs', value: 'logs'}, {name: 'announcement', value: 'announcement'}]}
     ]
 }

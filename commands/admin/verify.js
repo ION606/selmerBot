@@ -1,32 +1,39 @@
-function checkRole(bot, guild, userId, cal = false) {
-    var roleName;
-    
-    if (cal) {
-        roleName = "Selmer Bot Calendar";
-    } else {
-        roleName = "Selmer Bot Commands";
-    }
+const Discord = require('discord.js');
 
-    const role = guild.roles.cache.find((role) => { return (role.name == roleName); })
-    const user = guild.members.cache.get(userId);
+/**
+ * @param {Discord.Guild} guild 
+ * @returns {Promise<Boolean>}
+ */
+function checkRole(bot, guild, userId) {
+    return new Promise((resolve, reject) => {
+        const user = guild.members.cache.get(userId);
 
-    return (role != undefined && user.roles.cache.has(role.id)); // || user.id == guild.ownerId || bot.inDebugMode
+        // return (role != undefined && user.roles.cache.has(role.id)); // || user.id == guild.ownerId || bot.inDebugMode
 
+        // Maybe implement this later, useless for now
+        bot.mongoconnection.then((client) => {
+            // const role = client.db(message.guild.id).collection("admin-roles");
+            const a = new Array();
+            client.db(guild.id).collection("SETUP").findOne({_id: "roles"}).then((doc) => {
+                const comRoles = doc.commands;
+                const role = guild.roles.cache.find((role) => { return (role.name == "Selmer Bot Commands"); });
+                const hasPreAdminRole = (role != undefined && user.roles.cache.has(role.id) || user.id == guild.ownerId);
 
-    /*Maybe implement this later, useless for now
-    const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-    client.connect(err => {
-
-
-        const role = client.db(message.guild.id).collection("admin-roles");
-        shop.find().toArray(function(err, itemstemp) {
-            if (err) throw err;
-
-            items = [...itemstemp];
-            
-            client.close();
+                if (!comRoles) {
+                    resolve(hasPreAdminRole);
+                } else {
+                    const hasRoles = [];
+                    Promise.all(comRoles.map((val) => {
+                        if (user.roles.cache.has(val)) {
+                            hasRoles.push(true);
+                        }
+                    })).then(() => {
+                        resolve(hasRoles.length > 0 || hasPreAdminRole);
+                    });
+                }
+            });
         });
-    });*/
+    });
 }
 
 
