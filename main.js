@@ -9,7 +9,7 @@ const Stripe = require('stripe');
 
 const turnManager  = require('./commands/turnManager.js');
 const { welcome } = require('./commands/admin/welcome.js');
-const { handle_interaction } = require('./commands/interactionhandler.js');
+const { handle_interaction, handleContext } = require('./commands/interactionhandler.js');
 const { handle_dm } = require('./commands/dm_handler');
 const { devCheck } = require('./commands/dev only/devcheck.js');
 const { moderation_handler } = require('./commands/admin/moderation.js');
@@ -174,58 +174,60 @@ let xp_collection = new Map();
 let items;
 
 bot.on('ready', async () => {
-    registerCommands(bot);
+    const startTime = new Date().getTime();
+    registerCommands(bot).then(() => {
+        //Make then copy the shop
+        bot.mongoconnection.then(client => {
+            const shop = client.db("main").collection("shop");
+            shop.find().toArray(function(err, itemstemp) {
+                if (err) throw err;
 
-    //Make then copy the shop
-    bot.mongoconnection.then(client => {
-        const shop = client.db("main").collection("shop");
-        shop.find().toArray(function(err, itemstemp) {
-            if (err) throw err;
+                items = [...itemstemp];
+            });
 
-            items = [...itemstemp];
+
+            bot.user.setStatus('online');
         });
 
-
-        bot.user.setStatus('idle');
-        //Why doesn't this work?
-        // bot.user.setPresence({
-        //     status: 'online', activity: {
-        //         name: "It's only logical!",
-        //         type: "LISTENING"
-        //     }
-        // });
-    });
-
-    //Note the xp numbers are a little wonky on levels 6, 8 and 13 (why though?)
-    //See https://stackoverflow.com/questions/72212928/why-are-the-differences-between-my-numbers-inconsistent-sort-of-compund-interes
-    for (let i = 1; i < 101; i ++) {
-        // xp_collection.set(i, BASE_LVL_XP * .1);
-        let amount = BASE_LVL_XP * (Math.ceil(Math.pow((1.1), (2 * i))) + i);
-        xp_collection.set(i+1, amount);
-    }
+        //Note the xp numbers are a little wonky on levels 6, 8 and 13 (why though?)
+        //See https://stackoverflow.com/questions/72212928/why-are-the-differences-between-my-numbers-inconsistent-sort-of-compund-interes
+        for (let i = 1; i < 101; i ++) {
+            // xp_collection.set(i, BASE_LVL_XP * .1);
+            let amount = BASE_LVL_XP * (Math.ceil(Math.pow((1.1), (2 * i))) + i);
+            xp_collection.set(i+1, amount);
+        }
 
 
-    //Reaction map area
-    if (!bot.inDebugMode) {
-        console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
-    } else {
-        console.log("Testing testing 1 2 5...");
-    }
+        //Reaction map area
+        if (!bot.inDebugMode) {
+            console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
+        } else {
+            console.log("Testing testing 1 2 5...");
+        }
 
 
-    //Add the money symbol
-    let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
-    emj = srv.find((g) => { return g.name == 'selmer_coin' });
-    bot.currencysymbolmmain = `${emj}`;
-});
+        //Add the money symbol
+        let srv = bot.guilds.cache.get(bot.home_server).emojis.cache;
+        emj = srv.find((g) => { return g.name == 'selmer_coin' });
+        bot.currencysymbolmmain = `${emj}`;
+    }).catch((err) => {
+        console.log(err);
+    }).finally(() => { console.log(`Setting up Slash Commands took ${(new Date().getTime() - startTime) / 1000} seconds to complete!`); });
+}); 
 
 
 //Button Section
 bot.on('interactionCreate', async interaction => {
     const { commandName } = interaction;
+
     // console.log(bot.lockedChannels);
     //Slash commands
     if (interaction.isApplicationCommand()) {
+
+        if (interaction.isUserContextMenu()) {
+            return handleContext(bot, interaction.options.data[0]);
+        }
+
         const logable = ['kick', 'ban', 'unban', 'mute', 'unmute', 'timeout'];
         const econList = ["buy", 'shop', 'work', 'rank', 'inventory', 'balance', 'sell'];
         const adminList = ["setpresence", "setactivity"];
@@ -242,8 +244,10 @@ bot.on('interactionCreate', async interaction => {
             moderation_handler(bot, interaction, commandName);
         } else if (econList.includes(commandName)) {
             bot.commands.get('econ').execute(bot, interaction, Discord, mongouri, items, xp_collection);
-        }
-        else if (bot.commands.has(commandName)) {
+        } else if (commandName == 'game') {
+            return console.log(interaction);
+            bot.commands.get(bot, interaction, command, Discord, mongouri, items, xp_collection)
+        } else if (bot.commands.has(commandName)) {
             bot.commands.get(commandName).execute(interaction, Discord, Client, bot);
         } else {
             interaction.reply("Unknown command detected!");
@@ -268,16 +272,17 @@ bot.on("guildCreate", guild => {
 
     //const role = guild.roles.cache.find((role) => role.name === 'Selmer Bot Mod'); // member.roles.cache.has('role-id-here');
     const server = bot.guilds.cache.get(guild.id);
-    const owner = server.members.fetch(guild.ownerId).then(function(owner) {
-        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Commands_" role and people you want to access set the calendar the "Selmer Bot Calendar" role');
-        owner.send('To help set up Selmer Bot to work better with your server, use _!setup help_ in a channel Selmer Bot is in!');
+    server.members.fetch(guild.ownerId).then(function(owner) {
+        owner.send('Thank you for adding Selmer Bot to your server!\nPlease give people you want to have access to Selmer Bot\'s restricted commands the "_Selmer Bot Commands_" role and people you want to access set the calendar the "_Selmer Bot Calendar_" role');
+        owner.send('To help set up Selmer Bot to work better with your server, use _/setup help_ in a channel Selmer Bot is in!');
     });
 
     //Set up the server
     bot.mongoconnection.then(client => {
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}, {_id: 'announcement', channel: null, role: null}]);
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0},
+        {_id: 'announcement', channel: null, role: null}, {_id: 'roles', commands: ["Selmer Bot Commands"], announcements: "Selmer Bot Calendar"}]);
     });
 });
 
@@ -337,7 +342,7 @@ bot.on('guildMemberAdd', async (member) => {
     if (member.guild.id == bot.home_server && !bot.inDebugMode) { return; }
 
     //Check for impartial data
-    if(member.partial) await member.fetch();
+    if (member.partial) { member = await member.fetch(); }
 
     const guild = bot.guilds.cache.get(member.guild.id);
 
