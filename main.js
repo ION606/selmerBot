@@ -281,8 +281,7 @@ bot.on("guildCreate", guild => {
     bot.mongoconnection.then(client => {
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0},
-        {_id: 'announcement', channel: null, role: null}, {_id: 'roles', commands: ["Selmer Bot Commands"], announcements: "Selmer Bot Calendar"}]);
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}, {_id: 'announcement', channel: null, role: null}]);
     });
 });
 
