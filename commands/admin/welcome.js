@@ -1,105 +1,114 @@
-const { MessageAttachment } = require('discord.js');
-// const { readFile } = require('fs/promises');
-const fs = require("fs");
+const sharp = require('sharp');
 const fetch = require('node-fetch');
-const arrayBufferToBuffer = require('arraybuffer-to-buffer');
-
-const { request } = require('undici');
-const CanvasImport = require('@napi-rs/canvas');
-const canvas = CanvasImport.createCanvas(700, 250)
-const context = canvas.getContext('2d')
-
-//https://some-random-api.ml/welcome
-async function welcome(member, welcomechannel, welcomemessage = null, welcomebanner = null) {
-
-    //Draw Stuff
-    const context = canvas.getContext('2d');
-    var bkimgsrc;
-
-    let bkurl = 'https://github.com/ION606/selmerBot/blob/main/commands/admin/wallpaper.jpg';
-    const response = await fetch(bkurl);
-    response.arrayBuffer().then(async (data) => {
-        
-        // const background = new CanvasImport.Image();
-        // background.src = arrayBufferToBuffer(data);
-        
-
-        // This uses the canvas dimensions to stretch the image onto the entire canvas
-        // context.drawImage(background, 0, 0, canvas.width, canvas.height);
-        context.fillStyle = 'rgba(0,0,0,1)';
-        context.fillRect(0,0, canvas.width, canvas.height);
-
-        //Draw the Border
-        context.strokeStyle = '#0099ff';
-        context.strokeRect(0, 0, canvas.width, canvas.height);
+const { GuildMember } = require('discord.js');
 
 
-        //Add Text
-
-        //have the function here, because returns are whack
-        const applyText = (canvas, text) => {
-            const context = canvas.getContext('2d');
-        
-            // Declare a base size of the font
-            let fontSize = 70;
-            let i = 0;
-        
-            do {
-                // Assign the font to the context and decrement it so it can be measured again
-                context.font = `italic ${fontSize -= 10}px sans-serif`;
-                // Compare pixel width of the text to the canvas minus the approximate avatar size
-
-                i ++;
-            } while (context.measureText(text).width > canvas.width - 100);
-        
-            // Return the result to use in the actual canvas
-            return context.font;
-        };
-
-        //message.author.username == interaction.member.displayName
-        //message.guild.name == interaction.member.guild.name
-        let text = `Welcome to ${member.guild.name} ${member.user.username}#${member.user.discriminator}!`;
-        if(welcomemessage != null) {
+function formatMessage(member, welcomemessage) {
+    return new Promise((resolve, reject) => {
+        let text = `Welcome to ${member.guild.name} ${member.user.tag}!`;
+        if (welcomemessage != null) {
             text = welcomemessage;
             text = text.replace('{sn}', member.guild.name);
             text = text.replace('{un}', member.user.username);
             text = text.replace('{ut}', member.user.discriminator);
         }
-        
-        context.font= applyText(canvas, text);
-        context.fillStyle = '#ffffff';
-        context.fillText(text, (canvas.width/2) - (context.measureText(text).width)/2, canvas.height - 15);
 
+        resolve(text);
+    });
+}
 
-        //Draw a white circle
-        context.beginPath();
-        context.arc((canvas.width/2), 90, 85, 0, 2 * Math.PI, false);
-        context.fillStyle = 'white';
-        context.fill();
-        context.closePath();
+/**
+ * @param {GuildMember} member 
+ * @param {*} welcomeChannel 
+ */
+async function welcome(member, welcomeChannel, welcomemessage, welcomebanner, welcomeTextCol) {
+    formatMessage(member, welcomemessage).then(async (wmsg) => {
+        const width = 1024;
+        const height = 500;
+        const usernameText = `${wmsg}`;
+        const memberCountText = `You are member ${member.guild.memberCount}`;
+        const username = `
+            <svg width="${width}" height="${height}">
+                <style>
+                    .username { fill: ${welcomeTextCol}; font-size: ${Math.round(wmsg.length/2)}px; font-weight: bold;}
+                </style>
+                <text x="50%" y="50%" text-anchor="middle" class="username" font-family='Didot'>${usernameText}</text>
+            </svg>
+            `;
+        const memberCount = `
+            <svg width="${width}" height="${height}">
+                <style>
+                    .memberCount { fill: ${welcomeTextCol}; font-size: 40px; font-weight: bold;}
+                </style>
+                <text x="50%" y="50%" text-anchor="middle" class="memberCount" font-family='Didot'>${memberCountText}</text>
+            </svg>
+            `;
 
-        //ANYTHING DRAWN AFTER THIS WILL BE CLIPPED!!! 
-        //Make whatever image will be draw (the user's avatar) into a circular format
-        context.beginPath();
-        context.arc((canvas.width/2), 90, 80, 0, Math.PI * 2, true);
-        context.closePath();
+        const r = 100;
+        const circleShape = Buffer.from(`<svg><circle cx="${r}" cy="${r}" r="${r}" /></svg>`);
+        var response, arrayBuffer;
+        const usernameBuffer = Buffer.from(username);
+        const memberCountBuffer = Buffer.from(memberCount);
+        response = await fetch(member.displayAvatarURL());
+        arrayBuffer = await response.arrayBuffer();
+        const iconBuffer = Buffer.from(arrayBuffer);
 
-        // Clip off the region you just drew (enforce template?)
-        context.clip();
+        var bkBuffer;
 
+        if (!welcomebanner) {
+            response = await fetch('https://wallpapercave.com/wp/wp3258574.png');
+            arrayBuffer = await response.arrayBuffer();
+            bkBuffer = Buffer.from(arrayBuffer);
+        } else {
+            // return console.log(welcomebanner);
+            bkBuffer = Buffer.from(welcomebanner, 'base64');
+        }
 
-        //Add the user's profile pic (message.author == interaction.user)
-        const { body } = await request(member.displayAvatarURL({ format: 'jpg' }));
-        const avatar = new CanvasImport.Image();
-        avatar.src = Buffer.from(await body.arrayBuffer());
-        context.drawImage(avatar, (canvas.width/2) - 80, 10, 160, 160);
+        sharp(iconBuffer)
+        .resize(300, 300)
+        .composite([{
+            input: circleShape,
+            blend: 'dest-in'
+        }])
+        .toBuffer().then((iconBufferNew) => {
+            sharp(bkBuffer)
+                .resize(1024, 500)
+                .composite([
+                {
+                    input: usernameBuffer,
+                    top: 80,
+                    left: -10,
+                },
+                {
+                    input: memberCountBuffer,
+                    top: 130,
+                    left: -10,
+                },
+                {
+                    input: iconBufferNew,
+                    top: 10,
+                    left: 1024/2 - 300/2,
+                },
+                ]).toBuffer((err, buffer) => {
+                    if (err) { return console.error(err); }
 
-        // Use the helpful Attachment class structure to process the file for you
-        const attachment = new MessageAttachment(canvas.toBuffer('image/png'), 'profile-image.png');
-
-        welcomechannel.send({ files: [attachment] });
-        
-    })
+                    // return console.log(buffer.byteLength * 0.000001);
+                    welcomeChannel.send({
+                        content: "content",
+                        files: [buffer],
+                    });
+                });
+            });
+        });
+                
+        //     .toFile("./events/output.jpeg", (err, info) => {
+        //     if (err) throw err;
+        //     const attachment = new DJS.MessageAttachment("./events/output.jpeg");
+        //     welcomeChannel.send({
+        //         content: content,
+        //         files: [attachment],
+        //     });*/
+        //     });
 }
 
 module.exports = { welcome }

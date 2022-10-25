@@ -1,7 +1,7 @@
 //#region imports
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, GridFSBucket } = require('mongodb');
 const fs = require('fs');
 // const OpenAI = require('openai-api')
 const { Configuration, OpenAIApi } = require("openai");
@@ -245,8 +245,9 @@ bot.on('interactionCreate', async interaction => {
         } else if (econList.includes(commandName)) {
             bot.commands.get('econ').execute(bot, interaction, Discord, mongouri, items, xp_collection);
         } else if (commandName == 'game') {
-            return console.log(interaction);
-            bot.commands.get(bot, interaction, command, Discord, mongouri, items, xp_collection)
+            return interaction.reply("This command is still in development, use normal text\nEx: _!game tictactoe @opponent_")
+            const command = interaction.options.data[0];
+            bot.commands.get('game').execute(bot, interaction, command, Discord, mongouri, items, xp_collection);
         } else if (bot.commands.has(commandName)) {
             bot.commands.get(commandName).execute(interaction, Discord, Client, bot);
         } else {
@@ -281,7 +282,8 @@ bot.on("guildCreate", guild => {
     bot.mongoconnection.then(client => {
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0}, {_id: 'announcement', channel: null, role: null}]);
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0},
+        {_id: 'announcement', channel: null, role: null}, {_id: 'roles', commands: ["Selmer Bot Commands"], announcements: "Selmer Bot Calendar"}]);
     });
 });
 
@@ -362,7 +364,7 @@ bot.on('guildMemberAdd', async (member) => {
                 return console.log('No welcome channel detected');
             }
 
-            await welcome(member, welcomechannel, docs[0].welcomemessage);
+            await welcome(member, welcomechannel, docs[0].welcomemessage, docs[0].welcomebanner, (docs[0].welcometextcolor) ? docs[0].welcometextcolor : "#FFFFFF");
         })
     })
 });

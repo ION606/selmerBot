@@ -2,6 +2,8 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { Constants } = require('discord.js');
 const { CreateNewCollection } = require("../db/econ");
+const { checkRole } = require('./verify.js');
+const fetch = require('node-fetch');
 
 
 async function setWelcomeChannel(dbo, message, channelname) {
@@ -99,6 +101,22 @@ async function execute(interaction, Discord, Client, bot) {
                 } else if (command == "remove_mod_role") {
                     dbo.updateOne({_id: "roles"}, { $pull: { commands: { $in: [ args[i].value ] }} });
                     interaction.reply({ content: "Role removed!", ephemeral: true });
+                } else if (command == "welcome_banner") {
+                    const response = await fetch(interaction.options.data[0].attachment.attachment);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const imgbfr = Buffer.from(arrayBuffer);
+                    dbo.updateOne({_id: 'WELCOME'}, {$set: {welcomebanner: imgbfr.toString('base64')}});
+                    interaction.reply({ content: "Banner updated!", ephemeral: true });
+                } else if ("welcome_text_color") {
+                    const reg = /^#[0-9A-F]{6}$/i;
+                    const newCol = interaction.options.data[0].value;
+                    if (reg.test(newCol)) {
+                        dbo.updateOne({_id: 'WELCOME'}, {$set: {welcometextcolor: newCol}});
+                    interaction.reply("Color updated!");
+                    } else {
+                        interaction.reply("Please chose a valid hex color");
+                    }
+                    
                 } else {
                     interaction.reply({content: "Please chose a valid option", ephemeral: true});
                 }
@@ -137,6 +155,8 @@ module.exports = {
     options: [
         {name: 'welcome_channel', description: 'Sets the channel for welcome messages', type: Constants.ApplicationCommandOptionTypes.CHANNEL },
         {name: 'welcome_message', description: 'Sets the welcome message, Use {un} for username, {ut} for user tag and {sn} for server name', type: Constants.ApplicationCommandOptionTypes.STRING },
+        {name: 'welcome_banner', description: 'Sets the welcome banner', type: Constants.ApplicationCommandOptionTypes.ATTACHMENT},
+        {name: 'welcome_text_color', description: 'Sets the welcome banner text color', type: Constants.ApplicationCommandOptionTypes.STRING},
         {name: 'keep_logs', description: 'Toggles logging', type: Constants.ApplicationCommandOptionTypes.BOOLEAN },
         {name: 'log_channel', description: 'Sets the logging channel', type: Constants.ApplicationCommandOptionTypes.CHANNEL },
         {name: 'log_severity', description: 'Sets the logging Severity (logs this/lower tiers)', type: Constants.ApplicationCommandOptionTypes.STRING, choices: [{name: 'none', value: 'none'}, {name: 'low', value: 'low'}, {name: 'medium', value: 'medium'}, {name: 'high', value: 'high'}] },
