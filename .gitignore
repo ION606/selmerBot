@@ -7,3 +7,5 @@ backup.json
 !spec/LevelsXP.txt
 *.sqlite
 temp.js
+
+easySetup.js

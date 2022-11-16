@@ -1,7 +1,7 @@
 // // @ts-check //Disabled
 
 // Maybe have the interaction type be "user" https://canary.discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-types
-
+const { MessageActionRow, MessageButton, Message } = require('discord.js');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 let ecoimport = require("../db/econ.js");
 
@@ -71,18 +71,18 @@ async function Initialize(bot, user_dbo, command, message, first, second, other_
 //#endregion
 
 //replies to the message with current game specifics
-function getGame(message, args, db) {
+function getGame(interaction, args, db) {
     let id;
     var temp;
 
     if (args.length == 1 && String(args[0]).startsWith('<')) { id = args[0].substr(2, args[0].length - 3)}
-    else { id = message.author.id; }
-    var user_dbo = db.collection(message.author.id);
+    else { id = interaction.user.id; }
+    var user_dbo = db.collection(interaction.user.id);
 
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
         if (doc.game == null) {
-            return message.reply(`<@${id}> is not currently playing a game!`);
+            return interaction.reply(`<@${id}> is not currently playing a game!`);
         }
 
         temp = `<@${id}> is currently playing "${doc.game}"`;
@@ -91,58 +91,64 @@ function getGame(message, args, db) {
             temp += ` with <@${doc.opponent}>`
         }
 
-        message.reply(temp);
+        interaction.reply(temp);
     });
 }
 
-function acceptIsValid(bot, other_discord, message, msg, tag_len) {
+function acceptIsValid(bot, other_discord, interaction, invUserId, message) {
 
     if (other_discord == undefined) {
-        message.reply("This is not a valid invite!");
+        interaction.reply("This is not a valid invite!");
         return false;
     }
 
     //Make sure the bot was the one creating the invite
-    let check0 = msg.author.bot;
+    let check0 = message.author.bot;
 
     //Author
-    let tag = msg.content.substr(2, tag_len);
-    let check1 = Number(tag) == Number(message.author.id);
+    let check1 = Number(other_discord.id) == Number(invUserId);
 
     //Time (within the last 5 min)
-    let prev = snowflake.convertSnowflakeToDate(msg.id);
-    let now = snowflake.convertSnowflakeToDate(message.id);
+    let prev = snowflake.convertSnowflakeToDate(message.id);
+    let now = snowflake.convertSnowflakeToDate(interaction.id);
     // @ts-ignore
     let diff = now - prev;
     var minutes = Math.floor((diff/1000)/60);
     let check2 = minutes <= 5 || bot.inDebugMode;
 
-    if (!check0) { message.reply("really?"); }
-    else if (!check1 && check2) { message.reply("_INVALID USER_"); }
-    else if (check1 && !check2) { message.reply("_THIS INVITE EXPIRED!_"); }
-    else if (!check1 && !check2) { message.reply("_THIS MESSAGE HAS AN INVALID USER AND HAS EXPIRED_")}
+    if (!check0) { interaction.reply("really?"); }
+    else if (!check1 && check2) { interaction.reply("_INVALID USER_"); }
+    else if (check1 && !check2) { interaction.reply("_THIS INVITE EXPIRED!_"); }
+    else if (!check1 && !check2) { interaction.reply("_THIS MESSAGE HAS AN INVALID USER AND HAS EXPIRED_")}
 
     return (check0 && check1 && check2);
 }
 
 
-function hpmp(message, command, dbo) {
+function hpmp(interaction, command, dbo) {
     // throw 'THIS HAS NOT BEEN UPDATED WITH THE MOST RECENT VERSION OF THE MONGODB STRUCTURE!';
+    
+    dbo.find({"hpmp": {$exists: true}}).toArray(function(err, doc) {
+        interaction.reply(`You have ${String(doc[0].hpmp.hp)} hp and ${String(doc[0].hpmp.mp)} mp left!`);
+    });
+
+    /*
     if (command == 'hp') {
         dbo.find({"hpmp": {$exists: true}}).toArray(function(err, doc) {
-            return message.reply(`You have ${String(doc[0].hpmp.hp)} hp left!`);
+            return interaction.reply(`You have ${String(doc[0].hpmp.hp)} hp left!`);
         });
     } else if (command == 'mp') { 
         dbo.find({"hpmp": {$exists: true}}).toArray(function(err, doc) {
-            return message.reply(`You have ${String(doc[0].hpmp.hp)} mp left!`);
+            return interaction.reply(`You have ${String(doc[0].hpmp.MP)} mp left!`);
         });
     }
+    */
 }
 
 
-function equip(message, args, command, dbo, bot, shop) {
-    const inp = args[1];
-    if (!inp) { return message.reply("Please provide input (either a weapon for main or shield for secondary)")}
+function equip(interaction, inp, command, dbo, bot, shop) {
+    // const inp = args[1];
+    if (!inp) { return interaction.reply("Please provide input (either a weapon for main or shield for secondary)"); }
 
     //Check if the user is already in a game
     dbo.find({'game': {$exists: true}}).toArray(function(err, docs) {
@@ -151,7 +157,7 @@ function equip(message, args, command, dbo, bot, shop) {
         if (doc.game != null) {
             ret = true;
             // console.log(doc.game);
-            return message.reply('You can\'t equip while in a game!');
+            return interaction.reply('You can\'t equip while in a game!');
         }
 
         //If the thing is a shield, add it to secondary
@@ -160,7 +166,7 @@ function equip(message, args, command, dbo, bot, shop) {
                 if (docs[0] != undefined) {
                     dbo.updateOne({}, {$set: {'equipped.weapons.secondary': docs[0]}});
                 } else {
-                    message.reply("You don't own a shield!");
+                    interaction.reply("You don't own a shield!");
                 }
             });
 
@@ -172,7 +178,7 @@ function equip(message, args, command, dbo, bot, shop) {
                     //Equip the weapon
                     dbo.updateOne({}, {$set: {'equipped.weapons.main': docs[0]}});
                 } else {
-                    message.reply(`You don't own any ${inp}s!`);
+                    interaction.reply(`You don't own any ${inp}s!`);
                 }
             });
         }
@@ -200,7 +206,7 @@ function in_game_redirector(bot, interaction, threadname, doc, client, mongouri,
 
     dbo.find({'game': {$exists: true}}).toArray(function (err, docs) {
         const game = docs[0].game
-        
+
         switch (game) {
             case 'battle': battle.handle(client, dbo, other, bot, thread, interaction.customId.toLowerCase(), mongouri, items, interaction, xp_collection);
             break;
@@ -215,12 +221,11 @@ function in_game_redirector(bot, interaction, threadname, doc, client, mongouri,
 module.exports ={
     name: "game",
     description: "Play a game using Selmer Bot!",
-    async execute(bot, message, args, command, Discord, mongouri, items, xp_collection) {
-
+    async execute(bot, interaction, command, Discord, mongouri, items, xp_collection) {
 
 //#region Setup
-        const id = message.author.id;
-        const server = message.guild.id;
+        const id = interaction.user.id;
+        const server = interaction.guildId;
 
         // // @ts-ignore
         // const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -237,12 +242,12 @@ module.exports ={
         const serverinbotdb = botdb.collection(server);
 
         //Initialize if necessary
-        ecoimport.CreateNewCollection(message, client, server, id);
-        command = args[0];
+        ecoimport.CreateNewCollection(interaction, client, server, id);
+        var commandName = command.name;
 
         //Check for a second person and create a second database entry if neccessary
-        if (message.mentions.users.first() != undefined) {
-            ecoimport.CreateNewCollection(message, client, server, message.mentions.users.first().id);
+        if (command.options && command.options.length > 0 && command.options[0].type == "USER") {
+            ecoimport.CreateNewCollection(interaction, client, server, command.options[0].value);
         }
 
 //#endregion
@@ -260,41 +265,30 @@ module.exports ={
 
 //#region non-game-specific commands
             //For TWO+ PLAYER games only!!!
-            if (command == 'accept') {
-                //Handle the messages
-                if (message.reference == null) { return message.reply("Please reply to a valid battle request message!"); }
-                let mid = message.reference.messageId;
-                let msg = await message.channel.messages.fetch(mid);
-
-                //Check if the person actually challenged you
-                //Get the length of any user tag
-                let mentioned = msg.mentions.users.keys();
-
-                let tag_len = String(mentioned.next().value).length;
-
-                //<@tage_len>, <@  --2+tag_len+2+3 = 7+tag_len
-                let other_tag = msg.content.substr(7+tag_len, tag_len);
-                
-                const other_discord = msg.mentions.users.get(other_tag);
+            if (commandName == 'accept') {
+                const args = interaction.customId.split('|');
+                // console.log(interaction.message.interaction);
+                // console.log(interaction.user);
+                // return console.log(args);
 
                 //Should also check if the player is already playing a game!!!
-                if (!acceptIsValid(bot, other_discord, message, msg, tag_len)) { return; }
+                if (!acceptIsValid(bot, interaction.user, interaction, args[1], interaction.message)) { return; }
 
                 //Get the opponent
-                const other = db.collection(other_discord.id);
-                let startPos = msg.content.indexOf('"') + 1;
-                let newCommand = msg.content.substr(startPos, msg.content.lastIndexOf('"') - startPos);
-
-
+                const other_id = interaction.message.interaction.user.id;
+                const other = db.collection(other_id);
+                // return console.log(args, interaction.message.interaction);
+                let newCommand = interaction.message.interaction.commandName.split(" ")[1];
+                
                 //#region BOT SECTION
 
                 //Store both IDs in the database (for turns)
                 let name_first = await bot.users.cache.get(id);
-                let name_second = await bot.users.cache.get(other_discord.id);
+                let name_second = await bot.users.cache.get(other_id);
 
                 // message.reply(`${first} [${name_first}], ${second} [${name_second}]`); throw 'ERR';
                 const threadname = `${name_first.username} VS ${name_second.username} [${newCommand.toUpperCase()}]`;
-                var newObj = {0: id, 1: other_discord.id, turn: 0, thread: threadname};
+                var newObj = {0: id, 1: other_id, turn: 0, thread: threadname};
 
                 if (newCommand.replaceAll(" ", "").toLowerCase() == 'tictactoe') { newCommand = 'Tic Tac Toe'; }
 
@@ -318,90 +312,110 @@ module.exports ={
 
                 //#endregion
 
-
+                const remAccptBtn = (msgToDel) => {
+                    try {
+                        msgToDel.edit({components: []});
+                    } catch(err) {
+                        console.error(err);
+                    }
+                }
 
                 //Need this for all 2 player games
-                const result = Initialize(bot, dbo, newCommand, msg, id, other_discord.id, other);
+                const result = Initialize(bot, dbo, newCommand, interaction.message, id, other_id, other);
 
                 if (newCommand == 'battle') {
                     result.then(function (thread) {
                         battle.handle(client, dbo, other, bot, thread, 'initalize', mongouri, items, null, xp_collection);
+                        remAccptBtn(interaction.message);
                     });
                 } else if (newCommand == 'Tic Tac Toe') {
                     result.then(function (thread) {
                         ttt.handle(client, db, dbo, other, bot, thread, 'initalize', mongouri, null, xp_collection);
+                        remAccptBtn(interaction.message);
                     });
                 }
-            } else if (command == 'quit') {
+            } else if (commandName == 'quit') {
 
-                const channel = bot.channels.cache.get(message.channel.parentId);
+                const channel = bot.channels.cache.get(interaction.channel.parentId);
+
                 //Remove the turn counter from the bot's database
                 serverinbotdb.deleteOne({0: id} || {1: id});
                 if (doc.opponent != null) {
                     // let other = message.guild.members.cache.get(doc.opponent);
                     let other = db.collection(doc.opponent);
-                    channel.send(`<@${message.author.id}> has quit a game of "${game}" with <@${doc.opponent}>!`);
-                    winGame(client, bot, db, other, xp_collection, message);
+                    channel.send(`<@${interaction.user.id}> has quit a game of "${game}" with <@${doc.opponent}>!`);
+                    winGame(client, bot, db, other, xp_collection, interaction);
                 } else {
-                    loseGame(dbo, xp_collection, message, bot);
-                    channel.send(`<@${message.author.id}> has quit a game of "${game}"!`);
+                    loseGame(dbo, xp_collection, interaction, bot);
+                    channel.send(`<@${interaction.user.id}> has quit a game of "${game}"!`);
                 }
             }
-            else if (command == 'status') {
-                getGame(message, args, db);
-            } else if (command == 'hp' || command == 'mp') {
-                hpmp(message, command, dbo);
+            else if (commandName == 'status') {
+                getGame(interaction, args, db);
+            } else if (commandName == 'hpmp') {
+                hpmp(interaction, commandName, dbo);
             } else if (command == 'equip') {
                 // equipItem(client, bot, db, dbo, message);
-                equip(message, args, command, dbo, bot, items);
+                // This does not work
+                equip(interaction, args, command, dbo, bot, items);
             } else if (command == 'classes') {
+                // This does not work
                 presentClasses(message, args[1]);
             }
 //#endregion
 
 //#region game-specific commands
             else {
-                if (command == undefined) { return message.reply("Please specify a game or use _!game help_"); }
+                if (commandName == undefined) { return interaction.reply("Please specify a game or use _!game help_"); }
 
                 //Make change to new name if necessary
-                if (command.replaceAll(" ", "").toLowerCase() == 'tictactoe') { command = 'Tic Tac Toe'; }
+                if (commandName.replaceAll(" ", "").toLowerCase() == 'tictactoe') { commandName = 'Tic Tac Toe'; }
                 
-                if (game == 'battle' || command == 'battle') {
-                    if (!bot.inDebugMode) { return message.reply("This command is currently in development!"); }
+                //RETURN TO THIS LATER
+                if (game == 'battle' || commandName == 'battle') {
+                    if (!bot.inDebugMode) { return interaction.reply("This command is currently in development!"); }
                     
-                    //Handle sending the request and making sure the user exists here
-                    let other_discord = message.mentions.users.first();
-                    if (other_discord == undefined) {
-                        return message.reply(`"${args[1]}" is not a valid user (use _!game battle @user_)`);
-                    }
-                    
-                    message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"battle"_. To accept, please reply to this message with _!game accept_`);
-                } else if (game == 'Tic Tac Toe' || command == 'Tic Tac Toe') {
-                    let other_discord = message.mentions.users.first();
-                    if (other_discord == undefined) {
-                        return message.reply(`"${args[1]}" is not a valid user (use _!game tictactoe @user_)`);
-                    }
-                    
-                    message.channel.send(`${other_discord}, <@${message.author.id}> has invited you to play _"Tic Tac Toe"_. To accept, please reply to this message with _!game accept_`);
-                } else if (game == 'trivia' || command == 'trivia') {
-                    trivia.execute(message, args, Discord, client, bot);
-                } else if (game == "minesweeper" || command == 'minesweeper') {
-                    if (game == "minesweeper" && command == 'minesweeper') {
+                    const row = new MessageActionRow()
+                    .addComponents(
+                        new MessageButton()
+                        .setCustomId(`gameaccept|${command.options[0].value}|${interaction.user.id}`)
+                        .setLabel('Accept Invite')
+                        .setStyle('SUCCESS')
+                    );
+
+                    const content = {content: `${command.options[0].user}, ${interaction.user} has invited you to play _"Tic Tac Toe"_. Click the button to accept the invitation!`, components: [row]};
+                    interaction.reply(content).catch((err) => interaction.channel.send(content));
+
+                } else if (game == 'Tic Tac Toe' || commandName == 'Tic Tac Toe') {
+                    const row = new MessageActionRow()
+                    .addComponents(
+                        new MessageButton()
+                        .setCustomId(`gameaccept|${command.options[0].value}|${interaction.user.id}`)
+                        .setLabel('Accept Invite')
+                        .setStyle('SUCCESS')
+                    );
+
+                    const content = {content: `${command.options[0].user}, ${interaction.user} has invited you to play _"Tic Tac Toe"_. Click the button to accept the invitation!`, components: [row]};
+                    interaction.reply(content).catch((err) => interaction.channel.send(content));
+                } else if (game == 'trivia' || commandName == 'trivia') {
+                    trivia.execute(interaction, Discord, client, bot);
+                } else if (game == "minesweeper" || commandName == 'minesweeper') {
+                    if (game == "minesweeper" && commandName == 'minesweeper') {
                         return message.reply("You're already in a game!");
                     }
-                    const threadname = `${message.author.username} has started a solo game of Minesweeper`;
-                    const thread = await message.channel.threads.create({
+                    const threadname = `${interaction.user.username} is playing Minesweeper`;
+                    const thread = await interaction.channel.threads.create({
                         name: threadname,
                         // type: 'GUILD_PRIVATE_THREAD',
                         autoArchiveDuration: 60,
                         reason: `N/A`,
                     });
-                    mnswpr.handle(bot, null, thread, message, args);
+                    mnswpr.handle(bot, interaction, thread);
                 }
 
                 //Catch statement (invalid command)
                 else {
-                    message.reply(`'${bot.prefix}game ${command}' is not a command!`);
+                    interaction.reply(`'/game ${commandName}' is not a command!`);
                 }
             }
 //#endregion

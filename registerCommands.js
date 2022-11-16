@@ -112,7 +112,7 @@ function registerCommands(bot) {
                 },
             ]
         });
-return resolve(true);
+
         //Takes much longer, so it'll be the benchmark for when the Promise resolves
         //#region GAMES
         const gameOpts = require('./commands/games/gameCommandOptions.js');
@@ -120,18 +120,26 @@ return resolve(true);
             name: 'game',
             description: 'Play one of Selmer Bot\'s games!', //NOT APPLICABLE USING SUB COMMAND GROUPS???
             // type: Constants.ApplicationCommandOptionTypes.SUB_COMMAND_GROUP,
-            options: gameOpts
-        }).then(() => { resolve(true); }).catch((err) => { reject(err); });
-        //#endregion
+            options: gameOpts,
+            dm_permission: false
+        }).then(() => {
+            if (!bot.inDebugMode) { return resolve(true); }
 
-        
-        //#endregion
+            commands.create({
+                name: 'setup_embed',
+                description: 'Create a row of buttons for easier setup',
+                options: []
+            });
 
-        //#region Context Menus
-        commands.create({
-            name: "Temp",
-            type: 'USER'
-        });
+            //#region Context Menus
+            commands.create({
+                name: "Temp",
+                type: 'USER'
+            });
+            //#endregion
+        }).catch((err) => { reject(err); });
+
+        //#endregion
         //#endregion
     });
 }

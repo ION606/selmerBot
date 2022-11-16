@@ -245,9 +245,12 @@ bot.on('interactionCreate', async interaction => {
         } else if (econList.includes(commandName)) {
             bot.commands.get('econ').execute(bot, interaction, Discord, mongouri, items, xp_collection);
         } else if (commandName == 'game') {
-            return interaction.reply("This command is still in development, use normal text\nEx: _!game tictactoe @opponent_")
+            if (!bot.inDebugMode) { interaction.reply("This command is still in development, use normal text\nEx: _!game tictactoe @opponent_"); }
             const command = interaction.options.data[0];
             bot.commands.get('game').execute(bot, interaction, command, Discord, mongouri, items, xp_collection);
+        } else if (commandName == 'setup_embed') {
+            const {generateMsg} = require('./commands/admin/easySetup.js')
+            generateMsg(bot, interaction);
         } else if (bot.commands.has(commandName)) {
             bot.commands.get(commandName).execute(interaction, Discord, Client, bot);
         } else {
@@ -388,10 +391,12 @@ bot.on('messageCreate', (message) => {
     if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
 
     //Check if the prefix exists
-    if (!message.content.startsWith(prefix) || message.author.bot) {
+    if (message.author.bot) { return }
+    else if (!message.content.startsWith(prefix)) {
         //Use for the leveling-by-interaction system
         return;
     } else {
+        
         //Game section (too complicated to move to Slash Commands)
         //Note: Slash commands do not register as valid replies
         const args = message.content.slice(prefix.length).split(' ');

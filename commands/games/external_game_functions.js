@@ -5,16 +5,16 @@ const { addComplaintButton } = require('../dev only/submitcomplaint');
 
 
 //#region game lose/win
-function loseGame(user_dbo, xp_collection, message, bot = null) {
+function loseGame(user_dbo, xp_collection, interaction, bot = null) {
     return new Promise(function(resolve, reject) {
-    user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
+    user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs) {
         const doc = docs[0];
         if (doc == undefined) { 
-            message.reply("Oops! There's been an error, click the ✅ to report this!");
-            addComplaintButton(bot, message);
+            interaction.reply("Oops! There's been an error, click the ✅ to report this!");
+            addComplaintButton(bot, interaction);
             return;
         }
-        if (doc.game == null) { return message.reply("You're not even in a game and you're trying to quit! Sad..."); }
+        if (doc.game == null) { return interaction.reply("You're not even in a game and you're trying to quit! Sad..."); }
 
         var addbal;
         //If this function was called from "winGame", return
@@ -25,10 +25,13 @@ function loseGame(user_dbo, xp_collection, message, bot = null) {
             if (doc.balance > 5) {
                 user_dbo.updateOne(doc, { $set: { balance: doc.balance - addbal}});
             }
-        } else { message.channel.delete(); }
+        } else {
+            //Check if the channel is a thread
+            interaction.channel.delete();
+        }
 
         //Update the player's xp
-        addxp(message, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection)
+        addxp(interaction, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection)
         user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
         resolve(addbal);
@@ -38,14 +41,14 @@ function loseGame(user_dbo, xp_collection, message, bot = null) {
 }
 
 
-function winGame(client, bot, db, user_dbo, xp_collection, message, singlePlayer = false) {
+function winGame(client, bot, db, user_dbo, xp_collection, interaction, singlePlayer = false) {
     user_dbo.find({"game": {$exists: true}}).toArray(function(err, docs){
         const doc = docs[0];
         
         //Check for an opponent
         if (doc.opponent != null) {
             let other = db.collection(doc.opponent);
-            let promise_temp = loseGame(other, xp_collection, message);
+            let promise_temp = loseGame(other, xp_collection, interaction);
             
             promise_temp.then(function(result) {
                 var amt_taken = result;
@@ -55,7 +58,7 @@ function winGame(client, bot, db, user_dbo, xp_collection, message, singlePlayer
 
         //Delete the bot's record of the game
         if (!singlePlayer) {
-            client.db('B|S' + bot.user.id).collection(message.guild.id).drop();
+            client.db('B|S' + bot.user.id).collection(interaction.guildId).drop();
         }
         
 
@@ -63,16 +66,16 @@ function winGame(client, bot, db, user_dbo, xp_collection, message, singlePlayer
         user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, xp: doc.xp + (BASE.XP * doc.rank), 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
         if (!singlePlayer) {
-            const channel = bot.channels.cache.get(message.channel.parentId);
+            const channel = bot.channels.cache.get(interaction.channel.parentId);
             channel.send(`<@${user_dbo.s.namespace.collection}> just won a game of "${docs[0].game}"!`);
         }
-        message.channel.delete();
+        interaction.channel.delete();
     });
 }
 
 
-function equipItem(client, bot, db, dbo, message) {
-    
+function equipItem(client, bot, db, dbo, interaction) {
+    return interaction.reply("This command is not implemented yet!");
     if (!bot.inDebugMode) { return; }
     let items = [
         { name: 'HP Potion', cost: 20, icon: 'CUSTOM|healing_potion', sect: 'HP', num: 2 },

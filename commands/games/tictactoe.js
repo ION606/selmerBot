@@ -124,7 +124,6 @@ async function handle(client, db, dbo, other, bot, thread, command, doc, interac
         let board = ["", "", "", "", "", "", "", "", ""];
         postActionBar(thread, dbo, board, false,true);
     } else {
-
         //Change the board
         let square = Number(interaction.customId.split('|')[1]);
         let symbol = doc.symbols[doc.turn];
@@ -143,6 +142,8 @@ async function handle(client, db, dbo, other, bot, thread, command, doc, interac
             changeTurn(client, bot, interaction);
         } else {
             postActionBar(interaction, dbo, board, won);
+            
+            //Maybe add a "close board" button instead of this
             await wait(7000);
             winGame(client, bot, db, dbo, xp_collection, interaction.message);
         }

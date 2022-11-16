@@ -3,23 +3,24 @@ const { winGame, loseGame, equipItem } = require('./external_game_functions.js')
 const wait = require('node:timers/promises').setTimeout;
 const { STATE } = require('../db/econ.js')
 
-function startGame(bot, channel, message, args) {
+function startGame(bot, channel, interaction) {
+    const args = interaction.options.data;
     let componentlist = [];
     var diff;
 
-    if (args.length < 1 || args[0] == 'easy') {
+    if (args.length < 1 || args[0].value == 'easy') {
         diff = 0;
-    } else if (args[0] == 'medium') {
+    } else if (args[0].value == 'medium') {
         diff = 0.1;
-    } else if (args[0] == 'hard') {
+    } else if (args[0].value == 'hard') {
         diff = 0.2;
     } else {
         diff = 0;
     }
 
     let user = '';
-    if (args.length < 2 || args[1] == 'solo') {
-        user = message.author.id;
+    if (args.length < 2) {
+        user = interaction.user.id;
     }
 
     for (let i = 0; i < 5; i ++) {
@@ -45,6 +46,7 @@ function startGame(bot, channel, message, args) {
         componentlist.push(row);
     }
 
+    interaction.reply(`${interaction.user} has started a solo game of Minesweeper!`);
     channel.send({ content: `SCORE: \`0\`\nTILES LEFT: \`25\``, components: componentlist });
 }
 
@@ -90,7 +92,7 @@ async function changeBoard(bot, interaction, xp_collection) {
     const user = id[4];
     if (user && user != '') {
         if (interaction.user.id != user) {
-            interaction.user.send(`Message from a Minesweeper game in <#${interaction.channel.id}>: ***It's not your turn!***`);
+            interaction.user.send(`Message from a Minesweeper game in <#${interaction.channel.id}>: ***This is a solo game!***`);
             return; // interaction.reply({ content: "It's not your turn!", ephemeral: true }); //Can only reply once
         }
     }
@@ -103,7 +105,7 @@ async function changeBoard(bot, interaction, xp_collection) {
         bot.mongoconnection.then((client) => { client.db(interaction.guildId).collection(interaction.user.id).updateOne({ game: {$exists: true} }, { $set: { game: null } }); });
         const channel = bot.channels.cache.get(interaction.message.channel.parentId);
         channel.send(`${interaction.user} found a bomb in Minesweeper!`);
-        interaction.channel.send(`\`Thread closing\` <t:${Math.floor((new Date()).getTime()/1000) + 8}:R>`);
+        interaction.channel.send(`\`Thread closing\` <t:${Math.floor((new Date()).getTime()/1000) + 10}:R>`);
         
         await wait(7000);
         interaction.channel.delete();
@@ -140,29 +142,34 @@ async function changeBoard(bot, interaction, xp_collection) {
 }
 
 
-function checkAndStartGame(bot, message, channel, args) {
+function checkAndStartGame(bot, interaction, channel) {
     bot.mongoconnection.then(client => {
-        const db = client.db(message.guild.id);
-        const dbo = db.collection(message.author.id);
+        const db = client.db(interaction.guildId);
+        const dbo = db.collection(interaction.user.id);
         dbo.findOne({game: {$exists: true}}).then((doc) => {
             try {
-                if (doc.game != null) { return message.reply("You're already in a game!"); }
+                if (doc.game != null) {
+                    console.log(doc);
+                    return interaction.reply("You're already in a game!").catch((err) => {
+                        interaction.channel.send("You're already in a game!");
+                    });
+                }
 
                 dbo.updateOne({ "game": {$exists: true} }, { $set: { game: "minesweeper", state: STATE.FIGHTING }});
-                startGame(bot, channel, message, args);
+                startGame(bot, channel, interaction);
             } catch (err) {
                 console.log(err);
                 const { addComplaintButton } = require('../dev only/submitcomplaint.js');
-                addComplaintButton(bot, message);
+                addComplaintButton(bot, interaction.message);
             }
         });
     });
 }
 
 
-function handle(bot, interaction, channel = null, message = null, args = null, xp_collection = null) {
-    if (channel != null && args != null) {
-        checkAndStartGame(bot, message, channel, args);
+function handle(bot, interaction, channel = null, isStart = true, xp_collection = null) {
+    if (isStart) {
+        checkAndStartGame(bot, interaction, channel);
     } else {
         //Maybe add player checking later?
         changeBoard(bot, interaction, xp_collection);

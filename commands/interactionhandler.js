@@ -1,4 +1,3 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
 const { createSubscriptionManual } = require('./premium/stripe.js');
 const { pause_start_stop, playNext, showQueue } = require('./audio/audioMain.js');
 const { resolveComplaint } = require('./dev only/submitcomplaint.js');
@@ -6,8 +5,11 @@ const { RSSInteractionHandler } = require('../side projects/RSSHandlers/rssFeed.
 const reminders = require('./premium/reminders.js');
 const tuto = require('./Selmer Specific/tuto');
 const mswpr = require('./games/minesweeper.js');
+const giveaway = require('./misc/giveaway.js');
+const setup = require('./admin/easySetup.js');
 // const { RSSInteractionHandler } = require('./premium/rssFeed.js');
-const { Interaction } = require('discord.js')
+const { Interaction, Client } = require('discord.js');
+const Discord = require('discord.js');
 
 /**
  * 
@@ -88,10 +90,14 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 const page = Number(interaction.customId.split('|')[1]);
                 tuto.postEmbd(bot, interaction, page, true);
             } else if (interaction.customId.indexOf("mswpr|") != -1) {
-                mswpr.handle(bot, interaction, interaction.channel, interaction.message, null, xp_collection);
+                mswpr.handle(bot, interaction, interaction.channel, false, xp_collection);
             } else if (interaction.customId.indexOf("sbtutorial") != -1) {
                 interaction.deferUpdate();
                 tuto.execute(interaction, null, null, bot);
+            } else if (interaction.customId.indexOf("gameaccept") != -1) {
+                bot.commands.get('game').execute(bot, interaction, {name: 'accept'}, Discord, mongouri, items, xp_collection);
+            } else if (interaction.customId.indexOf("setupBtn") != -1) {
+                setup.handle(bot, interaction);
             } //Button else ifs here
         });
     }
@@ -157,12 +163,24 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
     
     //Forms
     else if (interaction.isModalSubmit()) {
-        reminders.modalHandle(bot, interaction);
+        if (interaction.customId.indexOf('newEventModal') != -1) {
+            reminders.modalHandle(bot, interaction);
+        } else if (interaction.customId.indexOf('giveawayModal') != -1) {
+            giveaway.processForm(interaction, bot);
+        }
     } //other selection types here
 }
 
+/**
+ * @param {Client} bot 
+ * @param {Interaction} interaction 
+ */
+async function handleContext(bot, interaction) {
+    const { targetId, commandName, user } = interaction;
+    console.log(interaction);
+}
 
-module.exports = { handle_interaction }
+module.exports = { handle_interaction, handleContext }
 
 //values: [ 'price_1LI5pzFtuywsbrwdlY1gWMkV' ]
 //values: [ 'price_1LIpROFtuywsbrwdmxOb8Baj' ]

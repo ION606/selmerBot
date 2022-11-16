@@ -3,11 +3,12 @@ const fetch = require('node-fetch');
 const categoriesJSON = require('./trivia_categories.json').trivia_categories;
 const { decode } = require('html-entities');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { Interaction } = require('discord.js');
 
 
 const categories = new Map();
 for (i in categoriesJSON) {
-    categories.set(categoriesJSON[i].name, categoriesJSON[i].id);
+    categories.set(categoriesJSON[i].name, categoriesJSON[i].value);
 }
 // const { jsonToMapRecursive, mapToTableRecursive } = require('../utils/jsonFormatters.js');
 
@@ -41,11 +42,11 @@ function changeDB(bot, message, m) {
 
 
 /**
- * @param {*} message 
+ * @param {Interaction} interaction 
  * @param {Map<string, object>} m 
  * @param {int} time 
  */
-function startTrivia(message, m, time, bot) {
+function startTrivia(interaction, m, time, bot) {
     var iter = m.values().next();
     var obj = iter.value;
 
@@ -63,8 +64,10 @@ function startTrivia(message, m, time, bot) {
         return (response.content.toLowerCase() == answer.toLowerCase());
     };
     
-    message.reply({ content: `${question}\n(Type your answers below!)`, fetchReply: true })
-        .then(() => {
+    interaction.channel.send({ content: `${question}\n(Type your answers below!)`, fetchReply: true })
+        .then((message) => {
+            interaction.reply({content: `Trivia started by ${interaction.user}`});
+
             const timeList = ['🔟', '9️⃣', '8️⃣', '7️⃣', '6️⃣', '5️⃣', '4️⃣', '3️⃣', '2️⃣', '1️⃣', '0️⃣' ];
             var i = 0;
             const intId = setInterval(() => { if (i < timeList.length) { message.react(timeList[i]); i++ } }, Math.round(time/11));
@@ -72,9 +75,9 @@ function startTrivia(message, m, time, bot) {
             message.channel.awaitMessages({ filter, max: 10, time: time }) // , errors: ['time']
                 .then((collected) => {
                     if (collected.size > 0) {
-                        message.reply(`${collected.first().author} got the correct answer (${answer})!`);
+                        message.reply(`${collected.first().author} got the correct answer (||${answer}||) first!`);
                     } else {
-                        message.reply('Tsk Tsk, looks like nobody got the answer this time.');
+                        message.reply(`Tsk Tsk, looks like nobody got the answer (||${answer}||) this time.`);
                     }
 
                     // changeDB(bot, message, null);
@@ -82,7 +85,7 @@ function startTrivia(message, m, time, bot) {
                 })
                 .catch((collected) => {
                     console.log(collected);
-                    message.reply('Tsk Tsk, looks like nobody got the answer this time.');
+                    message.reply(`Tsk Tsk, looks like nobody got the answer (||${answer}||) this time.`);
                     // changeDB(bot, message, null);
                     clearInterval(intId);
                 });
@@ -94,25 +97,31 @@ function startTrivia(message, m, time, bot) {
 
 module.exports = {
     name: 'trivia',
-    async execute(message, args, Discord, Client, bot) {
-        const difficult = ['easy', 'medium', 'hard'];
+    async execute(interaction, Discord, Client, bot) {
+        const opts = interaction.options.data[0].options;
+        const args = [];
+        args[0] = opts.filter((o) => { return (o.name == 'difficulty'); })[0];
+        args[1] = opts.filter((o) => { return (o.name == 'category'); })[0];
+        args[2] = opts.filter((o) => { return (o.name == 'time'); })[0];
+
+        const difficult = ['hard', 'medium', 'easy'];
         let inputs = ['easy', ''];
 
-        if (args[0] && difficult.includes(args[0].toLowerCase())) {
-            inputs[0] = args[0].toLowerCase();
-        } else if (args[0] == 'help') {
-            let temp = `Use ${bot.prefix}trivia [difficulty (easy, medium, hard)] [topic] [time]\n`;
+        if (args[0] && difficult.includes(args[0].value.toLowerCase())) {
+            inputs[0] = args[0].value.toLowerCase();
+        } else if (args[0].value == 'help') {
+            let temp = `Use /trivia [difficulty (easy, medium, hard)] [category] [time]\n`;
             temp += '**__Trivia Categories__**\n';
             categories.forEach((val, key) => {
                 temp += `_${key}_\n`;
-            })
+            });
             temp += '_Please copy and paste the FULL NAME if you want to use a category';
 
-            return message.reply(temp);
+            return interaction.reply(temp);
         }
 
-        if (args[1] && Array.from(categories.keys()).includes(args[1])) {
-            inputs[1] = categories.get(args[1]);
+        if (args[1] && Array.from(categories.keys()).includes(args[1].value)) {
+            inputs[1] = categories.get(args[1].value);
         }
 
         // Get all categories mapped to their ids
@@ -142,9 +151,11 @@ module.exports = {
                     // console.log(decode(query));
                     query = decode(query);
 
-                    //Get the answer (may have "" in it)
-                    const question = query.substring(query.indexOf('question":') + 10, query.indexOf('","correct_answer'));
-                    // console.log(`Q: ${question}\n\nActual: ${query}\n---------------------------------------`);
+                    if (bot.inDebugMode) {
+                        //Get the answer (may have "" in it)
+                        // const question = query.substring(query.indexOf('question":') + 10, query.indexOf('","correct_answer'));
+                        // console.log(`Q: ${question}\n\nActual: ${query}\n---------------------------------------`);
+                    }
 
                     let q = query.split('","');
                     // queries[ind] = q;
@@ -156,11 +167,11 @@ module.exports = {
                     i ++;
                 });
 
-                const time = args[2] || (difficult.indexOf(inputs[0]) + 1) * 10000;
+                const time = (args[2]) ? args[2].value : (difficult.indexOf(inputs[0]) + 1) * 10000;
 
                 // console.log(m, time);
                 // changeDB(bot, message, m);
-                startTrivia(message, m, time, bot);
+                startTrivia(interaction, m, time, bot);
             }
         });
     }

@@ -6,13 +6,6 @@ const { checkRole } = require('./verify.js');
 const fetch = require('node-fetch');
 
 
-async function setWelcomeChannel(dbo, message, channelname) {
-    const channel = message.guild.channels.cache.find(ch => ch.name === channelname);
-    dbo.insertOne({welcomechannel: channel});
-}
-
-
-
 async function execute(interaction, Discord, Client, bot) {
     const server = interaction.guildId;
     const owner = interaction.guild.members.cache.get(interaction.guild.ownerId);
@@ -46,19 +39,22 @@ async function execute(interaction, Discord, Client, bot) {
 
                     dbo.updateOne({welcomechannel: {$exists: true}}, {$set: {welcomechannel: `${channel.id}`}});
                     interaction.reply({content: `Set ${channel} as the new welcome channel`, ephemeral: true})
-                } else if (command == 'welcome_message') {
+                }
+                else if (command == 'welcome_message') {
                     // if (args.length < 2) { return interaction.reply('The command format is _!setup welcome\\_message_\nUse _{sn}_ to insert the server name, _{un}_ to insert the user name, and _{ut}_ to insert the user tag\nExample: _!setup welcome\\_message Welcome to {sn} Sir {un}#{ut}_'); }
                     const msg = args[i].value;
 
                     if (msg.length > 30 || msg.length < 1) { return interaction.reply({content: 'Please specify a welcome message between 0 and 30 characters!', ephemeral: true}); }
                     dbo.updateOne({welcomemessage: {$exists: true}}, {$set: {welcomemessage: msg}})
-                } else if (command == 'keep_logs') {
+                }
+                else if (command == 'keep_logs') {
                     let keeplogs = args[i].value;
 
                     dbo.updateOne({ _id: 'LOG'}, {$set: {keepLogs: keeplogs}});
 
                     interaction.reply({content: `Toggled log keeping to ${keeplogs}. Please use _!setup log_channel_ to choose the log channel`, ephemeral: true});
-                } else if (command == 'log_channel') {
+                }
+                else if (command == 'log_channel') {
                     // if (args.length != 2) { return message.reply('Please specify a parameter\nExample: _!setup log\\_channel true_'); }
 
                     const channel = args[i].channel;
@@ -66,7 +62,8 @@ async function execute(interaction, Discord, Client, bot) {
 
                     dbo.updateOne({_id: 'LOG'}, {$set: {logchannel: `${channel.id}`}});
                     interaction.reply({content: `Made ${channel} the new Selmer Bot Logs channel!`, ephemeral: true});
-                } else if (command == 'log_severity') {
+                }
+                else if (command == 'log_severity') {
                     const tier = args[i].value;
                     const l = ['none', 'low', 'medium', 'high'];
                     if (!l.includes(tier)) { return interaction.reply({content: "Please select an existing tier ('none', 'low', 'medium', 'high')", ephemeral: true}); }
@@ -74,7 +71,8 @@ async function execute(interaction, Discord, Client, bot) {
                     dbo.updateOne({_id: 'LOG'}, {$set: {severity: tier}})
 
                     interaction.reply({content: `Severity updated to ${tier}`, ephemeral: true});
-                } else if (command == 'announcement_role') {
+                }
+                else if (command == 'announcement_role') {
                     const role = args[i].value;
                     // if (message.mentions.roles.first() == undefined) {
                     //     return message.reply("Please mention a role (_!setup announcement\\_role **@role**_)\n_Note: Selmer Bot does NOT ping the @everyone role_");
@@ -83,12 +81,14 @@ async function execute(interaction, Discord, Client, bot) {
                     dbo.updateOne({_id: 'announcement'}, { $set: { 'role': role.id } });
 
                     interaction.reply({content: `Role updated to ${role}`, ephemeral: true});
-                } else if (command == "announcement_channel") {
+                }
+                else if (command == "announcement_channel") {
                     const channel = args[i].channel;
                     if (!channel) { return interaction.reply({content: 'The specified channel does not exist!', ephemeral: true}); }
 
                     dbo.updateOne({_id: 'announcement'}, { $set: { 'channel': channel.id } });
-                } else if (command == "add_mod_role") {
+                }
+                else if (command == "add_mod_role") {
                     dbo.findOne({_id: "roles"}).then((doc) => {
                         const role = args[i].value;
                         if (!doc.commands.includes(role)) {
@@ -98,16 +98,19 @@ async function execute(interaction, Discord, Client, bot) {
                             interaction.reply({ content: "This role is already a command role!", ephemeral: true });
                         }
                     });
-                } else if (command == "remove_mod_role") {
+                }
+                else if (command == "remove_mod_role") {
                     dbo.updateOne({_id: "roles"}, { $pull: { commands: { $in: [ args[i].value ] }} });
                     interaction.reply({ content: "Role removed!", ephemeral: true });
-                } else if (command == "welcome_banner") {
+                }
+                else if (command == "welcome_banner") {
                     const response = await fetch(interaction.options.data[0].attachment.attachment);
                     const arrayBuffer = await response.arrayBuffer();
                     const imgbfr = Buffer.from(arrayBuffer);
                     dbo.updateOne({_id: 'WELCOME'}, {$set: {welcomebanner: imgbfr.toString('base64')}});
                     interaction.reply({ content: "Banner updated!", ephemeral: true });
-                } else if ("welcome_text_color") {
+                }
+                else if ("welcome_text_color") {
                     const reg = /^#[0-9A-F]{6}$/i;
                     const newCol = interaction.options.data[0].value;
                     if (reg.test(newCol)) {
@@ -116,8 +119,8 @@ async function execute(interaction, Discord, Client, bot) {
                     } else {
                         interaction.reply("Please chose a valid hex color");
                     }
-                    
-                } else {
+                }
+                else {
                     interaction.reply({content: "Please chose a valid option", ephemeral: true});
                 }
                 /* Made obsolete by the change to Slash Commands
@@ -143,8 +146,6 @@ async function execute(interaction, Discord, Client, bot) {
         }
     });
 }
-
-
 
 
 
