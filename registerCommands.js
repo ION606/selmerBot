@@ -135,7 +135,8 @@ function registerCommands(bot) {
             commands.create({
                 name: "Temp",
                 type: 'USER'
-            });
+            }).then(() => { resolve(true); });
+            
             //#endregion
         }).catch((err) => { reject(err); });
 

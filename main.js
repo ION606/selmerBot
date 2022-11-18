@@ -17,6 +17,7 @@ const { registerCommands } = require('./registerCommands.js');
 const { backupLists, loadBotBackups } = require('./commands/dev only/backupBot.js');
 const { setPresence } = require('./commands/dev only/setPresence.js');
 const { exit } = require('process');
+const {textToLevels} = require('./commands/Selmer Specific/msgLevels.js');
 //#endregion
 
 const BASE_LVL_XP = 20;
@@ -172,6 +173,7 @@ bot.commands.set('game', temp_command);
 //XP Table section
 let xp_collection = new Map();
 let items;
+var botIsReady = bot.inDebugMode;
 
 bot.on('ready', async () => {
     const startTime = new Date().getTime();
@@ -212,14 +214,19 @@ bot.on('ready', async () => {
         bot.currencysymbolmmain = `${emj}`;
     }).catch((err) => {
         console.log(err);
-    }).finally(() => { console.log(`Setting up Slash Commands took ${(new Date().getTime() - startTime) / 1000} seconds to complete!`); });
+    }).finally(() => {
+        botIsReady = true;
+        console.log(`Setting up Slash Commands took ${(new Date().getTime() - startTime) / 1000} seconds to complete!`);
+    });
 }); 
 
 
 //Button Section
 bot.on('interactionCreate', async interaction => {
     const { commandName } = interaction;
-
+    if (!botIsReady) {
+        return interaction.reply("The bot is still warming up. This is process can take up to 5 minutes. Please try again in a bit! \:(");
+    }
     // console.log(bot.lockedChannels);
     //Slash commands
     if (interaction.isApplicationCommand()) {
@@ -364,7 +371,7 @@ bot.on('guildMemberAdd', async (member) => {
             }
 
             if (welcomechannel == null) {
-                return console.log('No welcome channel detected');
+                return; // console.log('No welcome channel detected');
             }
 
             await welcome(member, welcomechannel, docs[0].welcomemessage, docs[0].welcomebanner, (docs[0].welcometextcolor) ? docs[0].welcometextcolor : "#FFFFFF");
@@ -392,11 +399,8 @@ bot.on('messageCreate', (message) => {
 
     //Check if the prefix exists
     if (message.author.bot) { return }
-    else if (!message.content.startsWith(prefix)) {
-        //Use for the leveling-by-interaction system
-        return;
-    } else {
-        
+
+    if (message.content.startsWith(prefix)) {
         //Game section (too complicated to move to Slash Commands)
         //Note: Slash commands do not register as valid replies
         const args = message.content.slice(prefix.length).split(' ');
@@ -406,7 +410,12 @@ bot.on('messageCreate', (message) => {
         } else if (command == 'rss' && bot.inDebugMode) {
             const rss = require('./side projects/RSSHandlers/rssFeed.js');
             rss.execute(message, args, Discord, client, bot);
+        } else {
+            textToLevels(bot, message, xp_collection);
         }
+    } else {
+        //Use for the leveling-by-interaction system
+        textToLevels(bot, message, xp_collection);
     }
 });
 

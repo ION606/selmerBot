@@ -3,7 +3,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const { Constants } = require('discord.js');
 const { CreateNewCollection } = require("../db/econ");
 const { checkRole } = require('./verify.js');
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
 
 
 async function execute(interaction, Discord, Client, bot) {
@@ -110,7 +110,7 @@ async function execute(interaction, Discord, Client, bot) {
                     dbo.updateOne({_id: 'WELCOME'}, {$set: {welcomebanner: imgbfr.toString('base64')}});
                     interaction.reply({ content: "Banner updated!", ephemeral: true });
                 }
-                else if ("welcome_text_color") {
+                else if (command == "welcome_text_color") {
                     const reg = /^#[0-9A-F]{6}$/i;
                     const newCol = interaction.options.data[0].value;
                     if (reg.test(newCol)) {
@@ -119,6 +119,18 @@ async function execute(interaction, Discord, Client, bot) {
                     } else {
                         interaction.reply("Please chose a valid hex color");
                     }
+                }
+                else if (command == "toggle_leveling") {
+                    dbo.updateOne({_id: 'LEVELING'}, {$set: {enabled: interaction.options.data[0].value}});
+                }
+                else if (command == "leveling_banner") {
+                    const response = await fetch(interaction.options.data[0].attachment.attachment);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const imgbfr = Buffer.from(arrayBuffer);
+                    dbo.updateOne({_id: 'LEVELING'}, {$set: {card: imgbfr.toString('base64')}});
+                }
+                else if (command == "leveling_text") {
+                    dbo.updateOne({_id: 'LEVELING'}, {$set: {text: interaction.options.data[0].value}});
                 }
                 else {
                     interaction.reply({content: "Please chose a valid option", ephemeral: true});
@@ -164,7 +176,10 @@ module.exports = {
         {name: 'announcement_role', description: 'Sets the role to be pinged for reminders', type: Constants.ApplicationCommandOptionTypes.ROLE},
         {name: 'announcement_channel', description: 'Sets the channel for reminders', type: Constants.ApplicationCommandOptionTypes.CHANNEL},
         {name: 'add_mod_role', description: 'Make a role into an admin role for Selmer Bot, able to execute ALL Selmer Bot commands', type: Constants.ApplicationCommandOptionTypes.ROLE},
-        {name: 'remove_mod_role', description: 'Remove a Selmer Bot moderation role', type: Constants.ApplicationCommandOptionTypes.ROLE}
+        {name: 'remove_mod_role', description: 'Remove a Selmer Bot moderation role', type: Constants.ApplicationCommandOptionTypes.ROLE},
+        {name: 'toggle_leveling', description: 'Enable or Disable the leveling system', type: Constants.ApplicationCommandOptionTypes.BOOLEAN},
+        {name: 'leveling_banner', description: 'Set the card background for the leveling system', type: Constants.ApplicationCommandOptionTypes.BOOLEAN},
+        {name: 'leveling_text', description: 'Set the card text for the leveling system', type: Constants.ApplicationCommandOptionTypes.BOOLEAN},
         // {name: 'help', description: 'gets help with setup commands', type: Constants.ApplicationCommandOptionTypes.STRING, choices: [{name: 'welcome', value: 'welcome'}, {name: 'logs', value: 'logs'}, {name: 'announcement', value: 'announcement'}]}
     ]
 }

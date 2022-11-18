@@ -94,21 +94,11 @@ async function welcome(member, welcomeChannel, welcomemessage, welcomebanner, we
 
                     // return console.log(buffer.byteLength * 0.000001);
                     welcomeChannel.send({
-                        content: "content",
                         files: [buffer],
                     });
                 });
             });
         });
-                
-        //     .toFile("./events/output.jpeg", (err, info) => {
-        //     if (err) throw err;
-        //     const attachment = new DJS.MessageAttachment("./events/output.jpeg");
-        //     welcomeChannel.send({
-        //         content: content,
-        //         files: [attachment],
-        //     });*/
-        //     });
 }
 
 module.exports = { welcome }

@@ -46,7 +46,7 @@ function CreateNewCollection(interaction, client, server, id, opponent = null, g
 }
 
 
-function addxp(interaction, dbo, amt, xp_list) {
+function addxp(interaction, dbo, amt, xp_list, noPing = false) {
     if (!isNum(amt)) { return console.log("This isn't a number...."); }
 
     dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) {
@@ -75,13 +75,24 @@ function addxp(interaction, dbo, amt, xp_list) {
 
                 let newmp = temp.mp + 5;
                 
-                dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { rank: rank, hpmp: {maxhp: newhp, maxmp: newmp} }});
-                interaction.channel.send('Congradulations <@' + interaction.user.id + '> for reaching rank ' + String(rank) + '!');
+                dbo.updateOne({balance: temp.balance, rank: temp.rank, lastdayworked: temp.lastdayworked}, { $set: { rank: rank, hpmp: {maxhp: newhp, maxmp: newmp}, xp: txp }});
+
+                var user;
+                if (interaction.user) {
+                    user = interaction.user;
+                } else {
+                    // This is a message
+                    user = interaction.author;
+                }
+
+                interaction.channel.send('Congradulations <@' + user.id + '> for reaching rank ' + String(rank) + '!');
             }
         } else {
-            interaction.reply("You've already reached max level!").catch((err) => {
-                interaction.channel.send("You've already reached max level!");
-            });
+            if (!noPing) {
+                interaction.reply("You've already reached max level!").catch((err) => {
+                    interaction.channel.send("You've already reached max level!");
+                });
+            }
         }
 
         dbo.updateOne({balance: temp.balance}, { $set: { xp: txp}});
@@ -388,6 +399,6 @@ module.exports = {
     },
 
     //Battle Updating stuff
-    addxp, checkAndUpdateBal, CreateNewCollection, econHelp, addxp, BASE, STATE,
+    addxp, checkAndUpdateBal, CreateNewCollection, econHelp, BASE, STATE,
     options: []
 }
