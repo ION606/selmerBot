@@ -19,7 +19,7 @@ function textToLevels(bot, message, xp_list) {
         const serverOpts = client.db(message.guild.id).collection('SETUP');
         serverOpts.findOne({_id: "LEVELING"}).then((doc) => {
             if (!doc) {
-                doc.insertOne({_id: "LEVELING", enabled: false, card: undefined, text: undefined});
+                serverOpts.insertOne({_id: "LEVELING", enabled: false, card: undefined, text: undefined});
                 const server = bot.guilds.cache.get(message.guild.id);
                 server.members.fetch(guild.ownerId).then(function(owner) {
                     // Implement `setup leveling enable`
