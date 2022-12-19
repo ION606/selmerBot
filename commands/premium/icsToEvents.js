@@ -3,6 +3,7 @@ const { URL } = require('url');
 const { Constants } = require('discord.js');
 const request = require('request');
 const { verPremium } = require('../premium/verifyPremium.js');
+const { isValidUrl } = require('../dev only/setPresence.js');
 
 
 //#region SET REMINDERS
@@ -70,16 +71,6 @@ function addReminder(interaction, bot, obj, Id) {
 
 
 //#region SETUP AND PARSING
-function isValidUrl(s) {
-    try {
-        new URL(s);
-        return true;
-    } catch (err) {
-        return false;
-    }
-};
-
-
 class calClass {
     constructor(vevent) {
         const model = vevent.model;

@@ -3,6 +3,7 @@ const { pause_start_stop, playNext, showQueue } = require('./audio/audioMain.js'
 const { resolveComplaint } = require('./dev only/submitcomplaint.js');
 const { RSSInteractionHandler } = require('../side projects/RSSHandlers/rssFeed.js');
 const reminders = require('./premium/reminders.js');
+const reactionrole = require('./admin/reactionrole.js');
 const tuto = require('./Selmer Specific/tuto');
 const mswpr = require('./games/minesweeper.js');
 const giveaway = require('./misc/giveaway.js');
@@ -98,6 +99,8 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
                 bot.commands.get('game').execute(bot, interaction, {name: 'accept'}, Discord, mongouri, items, xp_collection);
             } else if (interaction.customId.indexOf("setupBtn") != -1) {
                 setup.handle(bot, interaction);
+            } else if (interaction.customId.indexOf('addRole') != -1) {
+                reactionrole.handleBtn(interaction);
             } //Button else ifs here
         });
     }
@@ -167,6 +170,8 @@ async function handle_interaction(interaction, mongouri, turnManager, bot, STATE
             reminders.modalHandle(bot, interaction);
         } else if (interaction.customId.indexOf('giveawayModal') != -1) {
             giveaway.processForm(interaction, bot);
+        } else if (interaction.customId.indexOf('reactionModal') != -1) {
+            reactionrole.processForm(interaction, bot);
         }
     } //other selection types here
 }

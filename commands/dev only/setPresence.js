@@ -81,4 +81,4 @@ async function setPresence(bot, interaction) {
 }
 
 
-module.exports = { setPresence }
+module.exports = { setPresence, isValidUrl }

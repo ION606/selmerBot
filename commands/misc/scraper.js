@@ -2,23 +2,14 @@ const hastebin = require("hastebin-gen");
 const { addComplaintButton } = require('../dev only/submitcomplaint');
 const { Constants } = require('discord.js');
 const { URL } = require("url");
-
-
-function isValidUrl(s) {
-    try {
-        new URL(s);
-        return true;
-    } catch (err) {
-        return false;
-    }
-};
+const axios = require('axios');
+const { isValidUrl } = require('../dev only/setPresence.js');
 
 
 module.exports ={
     name: "scrape",
     description: "Scrapes a website, then puts the result into a hastebin",
     async execute(interaction, Discord, Client, bot) {
-        const axios = require('axios');
         // const cheerio = require('cheerio');
         const url = interaction.options.data[0].value;
 
