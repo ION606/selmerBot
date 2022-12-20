@@ -107,6 +107,11 @@ bot.mongouri = mongouri;
 const client = new MongoClient(mongouri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 bot.mongoconnection = client.connect();
 
+//Error stuff
+var preverr = "";
+var errmsg;
+var errTimes = 1;
+
 //#endregion MongoDB Integration end
 
 
@@ -122,6 +127,32 @@ process.on("SIGINT", (signal) => {
     console.log(`Process ${process.pid} has been interrupted`);
     backupLists(bot, IDM);
     // process.exit(0);
+});
+
+process.on('uncaughtException', (signal) => {
+    //Check if this was the last err and if so, ignore
+    if (preverr == signal.stack.toString()) {
+        var tempmsg = errmsg.content;
+        tempmsg.replaceAll(`{${errTimes}}`, `{${errTimes + 1}}`);
+        errTimes++;
+
+        errmsg.edit(tempmsg);
+        return;
+    }
+
+    const guild = bot.guilds.cache.get(bot.home_server);
+    const owner = guild.members.cache.get(guild.ownerId);
+    preverr = signal.stack.toString();
+
+    owner.send(`${owner} SELMER BOT IS DOWN!!!`).then(() => {
+        guild.channels.cache.get("1054550753982828624").send(`<@&944048889038774302> Selmer Bot is down!\n***ERROR STACK:***\n`).then(() => {
+            guild.channels.cache.get("1054550753982828624").send(`\`\`\`${preverr}\`\`\`\nTHIS ERROR HAS OCCURED {1} TIMES IN A ROW`).then((msg) => {
+                errmsg = msg;
+                preverr = signal.stack.toString();
+                // exit(12);
+            });
+        });
+    });
 });
 
 //#endregion
@@ -165,7 +196,6 @@ bot.commands.set('game', temp_command);
 // bot.commands.set('RSS', )
 
 //#endregion
-
 
 
 //#region bot.[anything] section
@@ -380,7 +410,7 @@ bot.on('guildMemberAdd', async (member) => {
 });
 
 
-bot.on('messageCreate', (message) => {
+bot.on('messageCreate', (message) => { console.log(y);
     //DM SECTION
     if (message.channel.type === "DM") {
         return handle_dm(message, bot);

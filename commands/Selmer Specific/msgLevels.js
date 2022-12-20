@@ -21,7 +21,7 @@ function textToLevels(bot, message, xp_list) {
             if (!doc) {
                 serverOpts.insertOne({_id: "LEVELING", enabled: false, card: undefined, text: undefined});
                 const server = bot.guilds.cache.get(message.guild.id);
-                server.members.fetch(guild.ownerId).then(function(owner) {
+                server.members.fetch(message.guild.ownerId).then(function(owner) {
                     // Implement `setup leveling enable`
                     owner.send("Interactive Leveling has been added to your server!\nTo enable it, use `/setup leveling enable`");
                 });
