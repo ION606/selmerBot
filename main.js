@@ -410,7 +410,7 @@ bot.on('guildMemberAdd', async (member) => {
 });
 
 
-bot.on('messageCreate', (message) => { console.log(y);
+bot.on('messageCreate', (message) => {
     //DM SECTION
     if (message.channel.type === "DM") {
         return handle_dm(message, bot);
