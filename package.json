@@ -28,6 +28,7 @@
     "mal-scraper": "^2.11.4",
     "mongoose": "^6.3.2",
     "mysql": "^2.18.1",
+    "node-fetch": "^2.6.7",
     "node.js": "^0.0.1-security",
     "npm": "^8.13.2",
     "openai": "^3.0.0",
@@ -62,5 +63,8 @@
   "bugs": {
     "url": "https://github.com/ION606/selmerBot/issues"
   },
-  "homepage": "https://github.com/ION606/selmerBot#readme"
+  "homepage": "https://github.com/ION606/selmerBot#readme",
+  "devDependencies": {
+    "@types/node-fetch": "^2.6.2"
+  }
 }

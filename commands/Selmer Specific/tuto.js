@@ -12,7 +12,7 @@ const tutoText = [
     "__**SELMER SPECIFIC**__\nThese commands will probably be found nowhere else\nThese include quotes (For legal reasons I have to state they aren't real quotes, mostly), as well as varius other things I based on good old Selmer\n\n__***COMMANDS***__\narrow, extracredit, tuto, profile, quotes",
     "__**MISCELLANEOUS**__\nThese are the commands that are not really in any of the other categories. Don't be fooled, these are actually some of the most useful commands Selmer Bot has to offer. From playing music to web scraping to memes, I'm sure Selmer Bot has what you're looking for\n\n__***COMMANDS***__\nhelp, kareoke, link, meme, pickupline, audio, react, scrape, stocks, crypto",
     "__**DM COMMANDS**__\nThese commands will only work in DM's. All these commands will only work with Selmer Bot Premium (it's on the next page).\nThese features include Reminders (AKA a calendar) and Selmer Bot's own chat AI\n\n__***COMMANDS***__\nchat, startconvo, endconvo, premium",
-    "__**SELMER BOT PREMIUM**__\nUse an AI chat, complete with semi-accurate IRL data, have Selmer Bot remind you of events with an easy-to-use interface and even a clickable calendar on the Selmer Bot website (_www.selmerbot.com_)\n\n__***COMMANDS***__\npremium, premium buy, premium manage, reminders",
+    "__**SELMER BOT PREMIUM**__\nUse an AI chat, complete with semi-accurate IRL data, have Selmer Bot remind you of events with an easy-to-use interface and even a clickable calendar on the Selmer Bot website (_ https://selmerbot.com _)\n\n__***COMMANDS***__\npremium, premium buy, premium manage, reminders",
     "__**Thank you for completing the Selmer Bot Tutorial**__\n\nTry out Selmer Bot's features, play the games and most importantly, have fun\n\n-The Selmer Bot Team AKA ION606"
 ];
 
@@ -29,7 +29,7 @@ function postEmbd(bot, interaction, page, refered) {
     te.setAuthor(author)
         .setTitle("Selmer Bot Tutorial")
         .setDescription(tutoText[page])
-        .setURL('https://www.selmerbot.com/')
+        .setURL('https://selmerbot.com/')
         .setFooter({ text: `Page ${page + 1}` });
 
 
@@ -66,9 +66,9 @@ function postEmbd(bot, interaction, page, refered) {
     row.addComponents(prevbtn, nextbtn);
 
     if (page > 0 || refered) {
-        interaction.update({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [te], components: [row] });
+        interaction.update({ content: '_Note: To see a full list of reminder stats visit selmerbot.com _', embeds: [te], components: [row] });
     } else {
-        interaction.channel.send({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [te], components: [row] });
+        interaction.channel.send({ content: '_Note: To see a full list of reminder stats visit selmerbot.com _', embeds: [te], components: [row] });
     }
 }
 

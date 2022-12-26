@@ -24,7 +24,8 @@ async function messageExists(message) {
 
 
 async function getResponse(convo, bot) {
-    const response = await bot.openai.createCompletion({
+    try {
+        const response = await bot.openai.createCompletion({
         model: "text-davinci-002",
         prompt: convo,
         temperature: 0.9,
@@ -36,6 +37,11 @@ async function getResponse(convo, bot) {
       });
 
       return response;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+    
 }
 
 async function convoManager(clientinp, bot, message) {
@@ -77,6 +83,10 @@ async function convoManager(clientinp, bot, message) {
 
             //Get the response
             const r = await getResponse(convo, bot);
+
+            if (!r) {
+                return message.channel.send("Uh oh! There's been an error! Please contact support \:[");
+            }
 
             let response = r.data.choices[0].text;
 

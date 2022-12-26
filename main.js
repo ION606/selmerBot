@@ -52,7 +52,7 @@ if (process.env.token != undefined) {
     StripeAPIKey = require('./config.json').StripeAPIKey;
     youtubeAPIKey = require('./config.json').youtubeAPIKey;
 
-    IDM = true;
+    IDM = token.startsWith("OTI2NT");
 }
 
 //#endregion
@@ -121,12 +121,14 @@ process.on("SIGTERM", (signal) => {
     console.log(`Process ${process.pid} received a SIGTERM signal`);
     backupLists(bot, IDM);
     // process.exit(0);
+    bot.user.setStatus('invisible');
 });
 
 process.on("SIGINT", (signal) => {
     console.log(`Process ${process.pid} has been interrupted`);
     backupLists(bot, IDM);
     // process.exit(0);
+    bot.user.setStatus('invisible');
 });
 
 process.on('uncaughtException', (signal) => {
@@ -140,6 +142,10 @@ process.on('uncaughtException', (signal) => {
         return;
     }
 
+    console.log(signal);
+
+    if (bot.inDebugMode) { return; }
+
     const guild = bot.guilds.cache.get(bot.home_server);
     const owner = guild.members.cache.get(guild.ownerId);
     preverr = signal.stack.toString();
@@ -150,6 +156,7 @@ process.on('uncaughtException', (signal) => {
                 errmsg = msg;
                 preverr = signal.stack.toString();
                 // exit(12);
+                bot.user.setStatus('dnd');
             });
         });
     });
@@ -183,6 +190,7 @@ fs.readdirSync('./commands')
 //Set these two manually because all the seperate games can't be included in the command list (all managed by the 'game' file)
 let temp_command = require("./commands/db/econ.js");
 const { STATE } = require('./commands/db/econ.js');
+const replies = require('./commands/Selmer Specific/replies.js');
 bot.commands.set('econ', temp_command);
 temp_command = require('./commands/games/game.js');
 bot.commands.set('game', temp_command);
@@ -207,6 +215,8 @@ var botIsReady = bot.inDebugMode;
 
 bot.on('ready', async () => {
     const startTime = new Date().getTime();
+    bot.user.setPresence({ activities: [{ name: 'Booting up, please hold!', type: "PLAYING" }], status: 'idle' });
+    
     registerCommands(bot).then(() => {
         //Make then copy the shop
         bot.mongoconnection.then(client => {
@@ -216,9 +226,6 @@ bot.on('ready', async () => {
 
                 items = [...itemstemp];
             });
-
-
-            bot.user.setStatus('online');
         });
 
         //Note the xp numbers are a little wonky on levels 6, 8 and 13 (why though?)
@@ -230,7 +237,7 @@ bot.on('ready', async () => {
         }
 
 
-        //Reaction map area
+        bot.user.setPresence({ activities: [{ name: '/help', type: 'PLAYING' }], status: 'online' });
         if (!bot.inDebugMode) {
             console.log('SLEEMER BOT ONLINE!!!!! OH MY GOD OH MY GOD!!!');
         } else {
@@ -322,7 +329,7 @@ bot.on("guildCreate", guild => {
     bot.mongoconnection.then(client => {
         
         const dbo = client.db(guild.id).collection('SETUP');
-        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0},
+        dbo.insertMany([{_id: 'WELCOME', 'welcomechannel': null, 'welcomemessage': null, 'welcomebanner': null, 'col': "#FFFFFF"}, {_id: 'LOG', 'keepLogs': false, 'logchannel': null, 'severity': 0},
         {_id: 'announcement', channel: null, role: null}, {_id: 'roles', commands: ["Selmer Bot Commands"], announcements: "Selmer Bot Calendar"}]);
     });
 });
@@ -390,22 +397,22 @@ bot.on('guildMemberAdd', async (member) => {
     bot.mongoconnection.then(client => {
         const dbo = client.db(member.guild.id).collection('SETUP');
 
-        dbo.find({_id: 'WELCOME'}).toArray(async (err, docs) => {
-            if (!docs) { return; }
+        dbo.findOne({_id: 'WELCOME'}).then(async (doc) => {
+            if (!doc) { return; }
 
             var welcomechannel;
-            if (docs[0].welcomechannel == null) {
+            if (doc.welcomechannel == null) {
                 welcomechannel = guild.channels.cache.find(channel => channel.name.toLowerCase() === 'welcome');
             } else {
-                welcomechannel = guild.channels.cache.get(docs[0].welcomechannel)
+                welcomechannel = guild.channels.cache.get(doc.welcomechannel)
             }
 
             if (welcomechannel == null) {
                 return; // console.log('No welcome channel detected');
             }
 
-            await welcome(member, welcomechannel, docs[0].welcomemessage, docs[0].welcomebanner, (docs[0].welcometextcolor) ? docs[0].welcometextcolor : "#FFFFFF");
-        })
+            await welcome(member, welcomechannel, doc.welcomemessage, doc.welcomebanner, (doc.welcometextcolor) ? doc.welcometextcolor : "#FFFFFF");
+        });
     })
 });
 
@@ -427,8 +434,16 @@ bot.on('messageCreate', (message) => {
     //Special case, testing server (still need the emojis and error logging)
     if (!bot.inDebugMode && message.guild.id == bot.home_server) { return; }
 
+    if (message.mentions.has(bot.user.id)) {
+        if (message.content == `<@${bot.user.id}>`) {
+            return message.reply("What?");
+        } else {
+            return replies(bot, message);
+        }
+    }
+
     //Check if the prefix exists
-    if (message.author.bot) { return }
+    if (message.author.bot) { return; }
 
     if (message.content.startsWith(prefix)) {
         //Game section (too complicated to move to Slash Commands)

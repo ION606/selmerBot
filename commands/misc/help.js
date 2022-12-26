@@ -17,14 +17,15 @@ module.exports ={
         if (spec == 'econ') {
             let temp = "***Selmer Bot Commands (Econ):***\n";
             temp += bot.commands.get('econ').econHelp();
-            temp += `\n\n(remember to use _'${bot.prefix}'_ before the command!)`;
+            temp += `\n\n(remember to use \`/\` before the command!)`;
             return interaction.reply({ content: temp, ephemeral: true });
 
         } 
         else if (spec == 'game') {
             let temp = "***Selmer Bot Commands (Games):***\n";
             temp += bot.commands.get('game').allGames.join(", ");
-            temp += `\n\n_Note: due to how complicated this feature is, it will not be migrated to slash commands for now_`;
+            // temp += `\n\n_Note: due to how complicated this feature is, it will not be migrated to slash commands for now_`;
+            temp += `\n\n(remember to use \'/\' before the command!)`;
             return interaction.reply({ content: temp, ephemeral: true });
             
         }
@@ -39,8 +40,8 @@ module.exports ={
             temp += modHelp();
 
             //Uses a different format, only the server owner can use it
-            temp += '\n_setup_ - ***SERVER OWNER ONLY*** - use _!setup help_\n';
-            temp += `\n\n(remember to use _'${bot.prefix}'_ before the command!)`;
+            temp += '\n_setup_ - ***SERVER OWNER ONLY*** - use \`setup help\`\n';
+            temp += `\n\n(remember to use \`/\` before the command!)`;
 
             return interaction.reply({ content: temp, ephemeral: true });
         }
@@ -55,10 +56,10 @@ module.exports ={
         bot.commands.forEach((comm) => {
             if (comm.name != 'verify') {
                 if (comm.name == 'econ') {
-                    temp += `**econ** - use _!help econ_\n`;
+                    temp += `**econ** - use \`/help econ\`\n`;
                 }
                 else if (comm.name == 'game') {
-                    temp += `**games** - use _!help game_\n`;
+                    temp += `**games** - use \`/help game\`\n`;
                 }
                 else {
                     if (comm.name && comm.description && !noPostList.includes(comm.name)) {
@@ -68,16 +69,18 @@ module.exports ={
             }
         });
 
-        temp += '**admin/moderation commands** - use !help admin\n';
+        temp += '**admin/moderation commands** - use `/help admin`\n';
         
         //Selmer Specific
         temp += '\n__**Selmer\'s \\*Special\\* Commands**__\n'
         sList.forEach((commName) => {
             const comm = bot.commands.get(commName);
-            temp += `${comm.name.toLowerCase()} - _${comm.description}_\n`;
+            if (comm && comm.name && comm.description) {
+                temp += `${comm.name.toLowerCase()} - _${comm.description}_\n`;
+            }
         })
 
-        temp += `\n_(remember to use '${bot.prefix}' before the command!)_`;
+        temp += `\n_(remember to use \`/\` before the command!)_`;
 
         interaction.reply({ content: temp, ephemeral: true });
     },

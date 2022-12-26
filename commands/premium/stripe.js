@@ -180,11 +180,13 @@ function handleInp(bot, interaction) {
 
 
 module.exports = {
-  name: 'premium',
-  description: 'everything payment',
-  execute(interaction, Discord, Client, bot) {
-      handleInp(bot, interaction);
-  }, handleInp, createSubscriptionManual,
-  options: [{name: 'input', description: 'What do you want to do?', type: Constants.ApplicationCommandOptionTypes.STRING, required: true, choices: [{name: 'help', value: 'help'}, {name: 'buy', value: 'buy'}, {name: 'manage', value: 'manage'}]}],
-  isDM: true
+    name: 'premium',
+    description: 'everything payment',
+    execute(interaction, Discord, Client, bot) {
+        handleInp(bot, interaction);
+    }, handleInp, createSubscriptionManual,
+    options: [
+        {name: 'option', description: 'What do you want to do?', type: Constants.ApplicationCommandOptionTypes.STRING, required: true, choices: [{name: 'help', value: 'help'}, {name: 'buy', value: 'buy'}, {name: 'manage', value: 'manage'}]}
+    ],
+    isDm: true
 }

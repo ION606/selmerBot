@@ -50,9 +50,9 @@ function postEmbd(bot, desc, interaction, page, isGuild, id, refered) {
         row.addComponents(prevbtn, nextbtn);
 
         if (page > 0 || refered) {
-            interaction.update({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [newEmbed], components: [row] });
+            interaction.update({ content: '_Note: To see a full list of reminder stats visit https://selmerbot.com _', embeds: [newEmbed], components: [row] });
         } else {
-            interaction.reply({ content: '_Note: To see a full list of reminder stats visit www.selmerbot.com _', embeds: [newEmbed], components: [row] });
+            interaction.reply({ content: '_Note: To see a full list of reminder stats visit https://selmerbot.com _', embeds: [newEmbed], components: [row] });
         }
     } catch (err) {
         console.log(err);

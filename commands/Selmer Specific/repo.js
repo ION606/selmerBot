@@ -18,7 +18,7 @@ module.exports = {
 
             new MessageButton()
             .setStyle("LINK")
-            .setURL("https://www.selmerbot.com/")
+            .setURL("https://selmerbot.com/")
             .setLabel("Website"),
 
             new MessageButton()

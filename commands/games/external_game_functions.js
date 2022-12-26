@@ -31,7 +31,7 @@ function loseGame(user_dbo, xp_collection, interaction, bot = null) {
         }
 
         //Update the player's xp
-        addxp(interaction, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection);
+        addxp(bot, interaction, user_dbo, Math.ceil((BASE.XP * doc.rank)/2),xp_collection);
         user_dbo.updateOne({"game": {$exists: true}}, { $set: { game: null, opponent: null, state: STATE.IDLE, 'hpmp.hp': doc.hpmp.maxhp, 'hpmp.mp': doc.hpmp.maxmp }});
 
         resolve(addbal);

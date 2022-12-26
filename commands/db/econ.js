@@ -3,6 +3,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const { Collection, Client, Formatters, Intents, Interaction } = require('discord.js');
 const { CLIENT_ODBC } = require('mysql/lib/protocol/constants/client');
 const { time } = require('@discordjs/builders');
+const { welcome } = require('../admin/welcome.js');
 
 let currencySymbol = '$';
 
@@ -46,7 +47,12 @@ function CreateNewCollection(interaction, client, server, id, opponent = null, g
 }
 
 
-function addxp(interaction, dbo, amt, xp_list, noPing = false) {
+
+/**
+ * @param {Interaction} interaction
+ * @returns 
+ */
+function addxp(bot, interaction, dbo, amt, xp_list, noPing = false) {
     if (!isNum(amt)) { return console.log("This isn't a number...."); }
 
     dbo.find({"balance": {$exists: true}}).toArray(function(err, doc) {
@@ -55,6 +61,7 @@ function addxp(interaction, dbo, amt, xp_list, noPing = false) {
         temp = doc[0];
         let rank = temp.rank + 1; //The table starts at rank 0, the user starts at rank 1
         const txp =  amt; /*temp.xp + amt; // This part was used before the xp check was made in the 'work' function */
+
         //If the rank is less than 100, you can still advance
         if (rank < 101) {
             let needed = xp_list.get(rank);
@@ -85,7 +92,21 @@ function addxp(interaction, dbo, amt, xp_list, noPing = false) {
                     user = interaction.author;
                 }
 
-                interaction.channel.send('Congradulations <@' + user.id + '> for reaching rank ' + String(rank) + '!');
+                if (bot) {
+                    bot.mongoconnection.then((client) => {
+                        const sbo = client.db(interaction.guildId).collection('SETUP');
+                        sbo.findOne({_id: 'LEVELING'}).then((doc) => {
+                            if (!doc || !doc.card) {
+                                return interaction.channel.send('Congradulations <@' + user.id + '> for reaching rank ' + String(rank) + '!');
+                            }
+                            const member = interaction.guild.members.cache.get((interaction.user) ? interaction.user.id : interaction.member.id);
+
+                            welcome(member, interaction.channel, doc.text, doc.card, doc.col, true, String(rank));
+                        });
+                    });
+                } else {
+                    interaction.channel.send('Congradulations <@' + user.id + '> for reaching rank ' + String(rank) + '!');
+                }
             }
         } else {
             if (!noPing) {
@@ -175,7 +196,7 @@ function buy(id, interaction, dbo, shop, xp_list) {
 
         var newObj = { name: item.name, cost: item.cost, icon: item.icon, sect: item.sect};
 
-        addxp(interaction, dbo, Math.ceil(item.cost * 1.2), xp_list);
+        addxp(bot, interaction, dbo, Math.ceil(item.cost * 1.2), xp_list);
         
         dbo.find(newObj, {$exists: true}).toArray(function(err, doc) {
             if(String(doc)) {
@@ -193,7 +214,7 @@ function buy(id, interaction, dbo, shop, xp_list) {
 
 
 //FIXME
-function sell(id, interaction, dbo, shop, xp_list) {
+function sell(bot, id, interaction, dbo, shop, xp_list) {
     const args = interaction.options.data;
     const query = args.filter((arg) => { return (arg.name == 'item'); })[0].value;
     var num = args.filter((arg) => { return (arg.name == 'amount'); })[0].value;
@@ -229,7 +250,7 @@ function sell(id, interaction, dbo, shop, xp_list) {
                 dbo.updateOne({"balance": {$exists: true}}, { $set: { balance: currentBal + amountSoldFor }});
             });
 
-            addxp(interaction, dbo, Math.ceil(functional_item.cost * 1.2), xp_list);
+            addxp(bot, interaction, dbo, Math.ceil(functional_item.cost * 1.2), xp_list);
 
             interaction.reply(`You've sold ${num} ${String(functional_item.name)} for ${currencySymbol}${amountSoldFor}`)
             .catch((err) => {
@@ -244,7 +265,7 @@ function sell(id, interaction, dbo, shop, xp_list) {
 }
 
 
-function work(dbo, interaction, xp_list) {
+function work(bot, dbo, interaction, xp_list) {
     let fulldate = new Date();
     let date = fulldate.getDate();
     dbo.find({"lastdayworked": {$exists: true}}).toArray(function(err, doc) {
@@ -265,7 +286,8 @@ function work(dbo, interaction, xp_list) {
 
             //Update the amount to the new TOTAL balance
             dbo.updateOne({"balance": {$exists: true}}, { $set: { balance: doc[0].balance + amt, lastdayworked: date }});
-            addxp(interaction, dbo, xp_earned, xp_list);
+
+            addxp(bot, interaction, dbo, xp_earned, xp_list);
             interaction.reply(`<@${interaction.user.id}> worked and earned ${currencySymbol}${amt} and ${xp_earned} xp!`).catch((err) => {
                 interaction.channel.send(`<@${interaction.user.id}> worked and earned ${currencySymbol}${amt} and ${xp_earned} xp!`)
             });
@@ -360,27 +382,17 @@ module.exports = {
 
             currencySymbol = bot.currencysymbolmmain;
 
-            /*/test area
-            if (command == 'xp' || command == 'adbal') {
-                //Selmer Dev only command
-                if (message.member.roles.cache.has('944048889038774302')) {
-                    if (command == 'xp') {
-                        return addxp(message, dbo, Number(args[0]), xp_list);
-                    }
-                }
-            }*/
-
             //Command Area
             if(command == 'init') {
                 //Add security check here
                 // init.execute(bot, message, args, command, dbo, Discord, connect);
                 return;
             } else if (command == 'buy') {
-                buy(id, interaction, dbo, items, xp_list);
+                buy(bot, id, interaction, dbo, items, xp_list);
             } else if (command == 'shop') {
                 getShop(interaction, items, bot);
             } else if (command == 'work') {
-                work(dbo, interaction, xp_list);
+                work(bot, dbo, interaction, xp_list);
             } else if (command == 'rank') {
                 rank(dbo, interaction, xp_list);
             } else if (command == 'inventory') {
@@ -388,7 +400,7 @@ module.exports = {
             } else if (command == 'balance') {
                 getBalance(dbo, interaction);
             } else if (command == 'sell') {
-                sell(id, interaction, dbo, items, xp_list);
+                sell(bot, id, interaction, dbo, items, xp_list);
             } else {
                 interaction.reply(`${command} is not a command`).catch((err) => {
                     interaction.channel.send(`${command} is not a command`);

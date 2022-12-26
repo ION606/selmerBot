@@ -3,7 +3,8 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const { Constants } = require('discord.js');
 const { CreateNewCollection } = require("../db/econ");
 const { checkRole } = require('./verify.js');
-// const fetch = require('node-fetch');
+const fetch = require('node-fetch');
+const help = require('../misc/help.js');
 
 
 async function execute(interaction, Discord, Client, bot) {
@@ -27,21 +28,14 @@ async function execute(interaction, Discord, Client, bot) {
         for (let i = 0; i < args.length; i++) {
             try {
                 const command = args[i].name;
-
-                // if (!command) {
-                //     interaction.reply('Please use the following format _!setup help <welcome, logs>_');
-                // } else
                 
                 if (command == 'welcome_channel') {
-                    // if (args.length != 2) { return interaction.reply('The command format is _!setup welcome_channel <channel name>_'); }
-                    // setWelcomeChannel(dbo, message, args[1]);
                     const channel = args[i].channel;
 
                     dbo.updateOne({welcomechannel: {$exists: true}}, {$set: {welcomechannel: `${channel.id}`}});
                     interaction.reply({content: `Set ${channel} as the new welcome channel`, ephemeral: true})
                 }
                 else if (command == 'welcome_message') {
-                    // if (args.length < 2) { return interaction.reply('The command format is _!setup welcome\\_message_\nUse _{sn}_ to insert the server name, _{un}_ to insert the user name, and _{ut}_ to insert the user tag\nExample: _!setup welcome\\_message Welcome to {sn} Sir {un}#{ut}_'); }
                     const msg = args[i].value;
 
                     if (msg.length > 30 || msg.length < 1) { return interaction.reply({content: 'Please specify a welcome message between 0 and 30 characters!', ephemeral: true}); }
@@ -55,8 +49,6 @@ async function execute(interaction, Discord, Client, bot) {
                     interaction.reply({content: `Toggled log keeping to ${keeplogs}. Please use _!setup log_channel_ to choose the log channel`, ephemeral: true});
                 }
                 else if (command == 'log_channel') {
-                    // if (args.length != 2) { return message.reply('Please specify a parameter\nExample: _!setup log\\_channel true_'); }
-
                     const channel = args[i].channel;
                     if (!channel) { return interaction.reply({content: 'The specified channel does not exist!', ephemeral: true}); }
 
@@ -72,7 +64,7 @@ async function execute(interaction, Discord, Client, bot) {
 
                     interaction.reply({content: `Severity updated to ${tier}`, ephemeral: true});
                 }
-                else if (command == 'announcement_role') {
+                else if (command == 'ping_role') {
                     const role = args[i].value;
                     // if (message.mentions.roles.first() == undefined) {
                     //     return message.reply("Please mention a role (_!setup announcement\\_role **@role**_)\n_Note: Selmer Bot does NOT ping the @everyone role_");
@@ -82,11 +74,12 @@ async function execute(interaction, Discord, Client, bot) {
 
                     interaction.reply({content: `Role updated to ${role}`, ephemeral: true});
                 }
-                else if (command == "announcement_channel") {
+                else if (command == "ping_channel") {
                     const channel = args[i].channel;
                     if (!channel) { return interaction.reply({content: 'The specified channel does not exist!', ephemeral: true}); }
 
                     dbo.updateOne({_id: 'announcement'}, { $set: { 'channel': channel.id } });
+                    interaction.reply({content: `Channel set to ${channel}`, ephemeral: true});
                 }
                 else if (command == "add_mod_role") {
                     dbo.findOne({_id: "roles"}).then((doc) => {
@@ -104,33 +97,56 @@ async function execute(interaction, Discord, Client, bot) {
                     interaction.reply({ content: "Role removed!", ephemeral: true });
                 }
                 else if (command == "welcome_banner") {
-                    const response = await fetch(interaction.options.data[0].attachment.attachment);
+                    const attachement_url = interaction.options.data[0].attachment.attachment;
+                    const response = await fetch(attachement_url);
                     const arrayBuffer = await response.arrayBuffer();
                     const imgbfr = Buffer.from(arrayBuffer);
                     dbo.updateOne({_id: 'WELCOME'}, {$set: {welcomebanner: imgbfr.toString('base64')}});
-                    interaction.reply({ content: "Banner updated!", ephemeral: true });
+                    interaction.reply({ content: `Banner updated to ${attachement_url}`, ephemeral: true});
                 }
                 else if (command == "welcome_text_color") {
                     const reg = /^#[0-9A-F]{6}$/i;
                     const newCol = interaction.options.data[0].value;
                     if (reg.test(newCol)) {
                         dbo.updateOne({_id: 'WELCOME'}, {$set: {welcometextcolor: newCol}});
-                    interaction.reply("Color updated!");
+                        interaction.reply({content: `Color updated to ${newCol} (https://www.color-hex.com/color/${newCol.substring(1)})`, ephemeral: true});
                     } else {
-                        interaction.reply("Please chose a valid hex color");
+                        interaction.reply("Please chose a valid hex color\nYou can find colors here: https://www.color-hex.com/");
                     }
                 }
                 else if (command == "toggle_leveling") {
-                    dbo.updateOne({_id: 'LEVELING'}, {$set: {enabled: interaction.options.data[0].value}});
+                    const tog = interaction.options.data[0].value;
+                    dbo.updateOne({_id: 'LEVELING'}, {$set: {enabled: tog}});
+                    interaction.reply({content: "Turned leveling " + (tog) ? "ON" : "OFF", ephemeral: true});
                 }
                 else if (command == "leveling_banner") {
-                    const response = await fetch(interaction.options.data[0].attachment.attachment);
+                    const level_banner = interaction.options.data[0].attachment.attachment;
+                    const response = await fetch(level_banner);
                     const arrayBuffer = await response.arrayBuffer();
                     const imgbfr = Buffer.from(arrayBuffer);
                     dbo.updateOne({_id: 'LEVELING'}, {$set: {card: imgbfr.toString('base64')}});
+                    interaction.reply({content: `Updated leveling banner to ${level_banner}`, ephemeral: true});
                 }
                 else if (command == "leveling_text") {
                     dbo.updateOne({_id: 'LEVELING'}, {$set: {text: interaction.options.data[0].value}});
+                    interaction.reply({content: `Updated leveling text to ${interaction.options.data[0].value}`, ephemeral: true});
+                }
+                else if (command == "leveling_color") {
+                    const reg = /^#[0-9A-F]{6}$/i;
+                    const newCol = interaction.options.data[0].value;
+                    if (reg.test(newCol)) {
+                        dbo.updateOne({_id: 'LEVELING'}, {$set: {col: newCol}});
+                        interaction.reply({content: `Color updated to ${newCol} (https://www.color-hex.com/color/${newCol.substring(1)})`, ephemeral: true});
+                    } else {
+                        interaction.reply("Please chose a valid hex color\nYou can find colors here: https://www.color-hex.com/");
+                    }
+                }
+                else if (command == "help") {
+                    if (interaction.options.data[0].value) {
+                        help.execute(interaction, Discord, Client, bot);
+                    } else {
+                        interaction.reply({content: 'https://docs.selmerbot.com/setup', ephemeral: true});
+                    }
                 }
                 else {
                     interaction.reply({content: "Please chose a valid option", ephemeral: true});
@@ -167,19 +183,20 @@ module.exports = {
     execute,
     options: [
         {name: 'welcome_channel', description: 'Sets the channel for welcome messages', type: Constants.ApplicationCommandOptionTypes.CHANNEL },
-        {name: 'welcome_message', description: 'Sets the welcome message, Use {un} for username, {ut} for user tag and {sn} for server name', type: Constants.ApplicationCommandOptionTypes.STRING },
+        {name: 'welcome_message', description: 'Use {un}, {ud}, {ut}, and {sn} for username, user descriminator, user tag, and server name', type: Constants.ApplicationCommandOptionTypes.STRING },
         {name: 'welcome_banner', description: 'Sets the welcome banner', type: Constants.ApplicationCommandOptionTypes.ATTACHMENT},
         {name: 'welcome_text_color', description: 'Sets the welcome banner text color', type: Constants.ApplicationCommandOptionTypes.STRING},
         {name: 'keep_logs', description: 'Toggles logging', type: Constants.ApplicationCommandOptionTypes.BOOLEAN },
         {name: 'log_channel', description: 'Sets the logging channel', type: Constants.ApplicationCommandOptionTypes.CHANNEL },
         {name: 'log_severity', description: 'Sets the logging Severity (logs this/lower tiers)', type: Constants.ApplicationCommandOptionTypes.STRING, choices: [{name: 'none', value: 'none'}, {name: 'low', value: 'low'}, {name: 'medium', value: 'medium'}, {name: 'high', value: 'high'}] },
-        {name: 'announcement_role', description: 'Sets the role to be pinged for reminders', type: Constants.ApplicationCommandOptionTypes.ROLE},
-        {name: 'announcement_channel', description: 'Sets the channel for reminders', type: Constants.ApplicationCommandOptionTypes.CHANNEL},
+        {name: 'ping_role', description: 'Sets the role to be pinged for reminders', type: Constants.ApplicationCommandOptionTypes.ROLE},
+        {name: 'ping_channel', description: 'Sets the channel for reminders', type: Constants.ApplicationCommandOptionTypes.CHANNEL},
         {name: 'add_mod_role', description: 'Make a role into an admin role for Selmer Bot, able to execute ALL Selmer Bot commands', type: Constants.ApplicationCommandOptionTypes.ROLE},
         {name: 'remove_mod_role', description: 'Remove a Selmer Bot moderation role', type: Constants.ApplicationCommandOptionTypes.ROLE},
         {name: 'toggle_leveling', description: 'Enable or Disable the leveling system', type: Constants.ApplicationCommandOptionTypes.BOOLEAN},
-        {name: 'leveling_banner', description: 'Set the card background for the leveling system', type: Constants.ApplicationCommandOptionTypes.BOOLEAN},
-        {name: 'leveling_text', description: 'Set the card text for the leveling system', type: Constants.ApplicationCommandOptionTypes.BOOLEAN},
-        // {name: 'help', description: 'gets help with setup commands', type: Constants.ApplicationCommandOptionTypes.STRING, choices: [{name: 'welcome', value: 'welcome'}, {name: 'logs', value: 'logs'}, {name: 'announcement', value: 'announcement'}]}
+        {name: 'leveling_banner', description: 'Set the card background for the leveling system', type: Constants.ApplicationCommandOptionTypes.ATTACHMENT},
+        {name: 'leveling_text', description: 'Use {un}, {ud}, {ut}, {sn}, and {r} for username, descriminator, user tag, server name, and rank', type: Constants.ApplicationCommandOptionTypes.STRING},
+        {name: 'leveling_color', description: 'Set the card text color for the leveling system', type: Constants.ApplicationCommandOptionTypes.STRING},
+        {name: 'help', description: 'in-app?', type: Constants.ApplicationCommandOptionTypes.BOOLEAN}
     ]
 }

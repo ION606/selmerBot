@@ -3,34 +3,55 @@ const fetch = require('node-fetch');
 const { GuildMember } = require('discord.js');
 
 
-function formatMessage(member, welcomemessage) {
+function formatMessage(member, welcomemessage, isLvl, rank = null) {
     return new Promise((resolve, reject) => {
-        let text = `Welcome to ${member.guild.name} ${member.user.tag}!`;
-        if (welcomemessage != null) {
-            text = welcomemessage;
-            text = text.replace('{sn}', member.guild.name);
-            text = text.replace('{un}', member.user.username);
-            text = text.replace('{ut}', member.user.discriminator);
+        let text;
+        if (!isLvl) {
+            text = `Welcome to ${member.guild.name} ${member.user.tag}!`;
+            if (welcomemessage != null) {
+                text = welcomemessage;
+                text = text.replace('{sn}', member.guild.name);
+                text = text.replace('{un}', member.user.username);
+                text = text.replace('{ud}', member.user.discriminator);
+                text = text.replace('{ut}', member.user.tag);
+            }
+        } else {
+            text = `Congradulations ${member.user.tag} for reaching rank ${rank}!`;
+
+            if (welcomemessage != null) {
+                text = welcomemessage;
+                text = text.replace('{sn}', member.guild.name);
+                text = text.replace('{un}', member.user.username);
+                text = text.replace('{ud}', member.user.discriminator);
+                text = text.replace('{ut}', member.user.tag);
+                text = text.replace('{r}', rank);
+            }
         }
 
         resolve(text);
     });
 }
 
+
 /**
  * @param {GuildMember} member 
  * @param {*} welcomeChannel 
  */
-async function welcome(member, welcomeChannel, welcomemessage, welcomebanner, welcomeTextCol) {
-    formatMessage(member, welcomemessage).then(async (wmsg) => {
+async function welcome(member, welcomeChannel, welcomemessage, welcomebanner, welcomeTextCol, isLvl = false, rank = null) {
+    formatMessage(member, welcomemessage, isLvl, rank).then(async (wmsg) => {
         const width = 1024;
         const height = 500;
         const usernameText = `${wmsg}`;
         const memberCountText = `You are member ${member.guild.memberCount}`;
+
+        var uSize = 55 - Math.round(wmsg.length/2);
+
+        if (uSize < 5) { uSize = 5; }
+        
         const username = `
             <svg width="${width}" height="${height}">
                 <style>
-                    .username { fill: ${welcomeTextCol}; font-size: ${Math.round(wmsg.length/2)}px; font-weight: bold;}
+                    .username { fill: ${welcomeTextCol}; font-size: ${uSize}px; font-weight: bold;}
                 </style>
                 <text x="50%" y="50%" text-anchor="middle" class="username" font-family='Didot'>${usernameText}</text>
             </svg>
