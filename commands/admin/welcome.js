@@ -42,7 +42,7 @@ async function welcome(member, welcomeChannel, welcomemessage, welcomebanner, we
         const width = 1024;
         const height = 500;
         const usernameText = `${wmsg}`;
-        const memberCountText = `You are member ${member.guild.memberCount}`;
+        const memberCountText = (!isLvl) ? `You are member ${member.guild.memberCount}` : "";
 
         var uSize = 55 - Math.round(wmsg.length/2);
 
